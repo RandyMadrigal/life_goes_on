@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import samuraiHero from "@/assets/samurai-hero.jpg";
-// Replace with your flute samurai image: import samuraiFlute from "@/assets/samurai-flute.jpg";
-const samuraiFlute = samuraiHero;
 import { Navbar } from "@/components/Navbar";
 import { AtmosphericBackdrop } from "@/components/AtmosphericBackdrop";
-import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 
-const KANJIS_BASE = [
+const KANJIS = [
   {
     kanji: "癒",
     title: "Healing",
@@ -23,9 +22,6 @@ const KANJIS_BASE = [
     title: "Hope",
     body: "A letter to your future self, waiting quietly for the morning you need it most.",
   },
-];
-
-const KANJIS_EXTRA = [
   {
     kanji: "生",
     title: "Life",
@@ -78,8 +74,7 @@ function QuoteCarousel() {
       <div
         className="overflow-hidden w-full"
         style={{
-          maskImage:
-            "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+          maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
           WebkitMaskImage:
             "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
         }}
@@ -96,10 +91,119 @@ function QuoteCarousel() {
   );
 }
 
-export default function Home() {
-  const { isAuthenticated } = useAuth();
-  const kanjis = isAuthenticated ? [...KANJIS_BASE, ...KANJIS_EXTRA] : KANJIS_BASE;
+function SubscribeSection() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus("loading");
+    const result = await api.post<{ name: string; email: string }>("/api/v1/subscribe", {
+      name,
+      email,
+    });
+    if (result.ok) {
+      setStatus("success");
+    } else {
+      setStatus("error");
+      setErrorMsg(result.message ?? "Something went wrong.");
+    }
+  };
+
+  return (
+    <section id="subscribe" className="relative py-28 px-4">
+      <AtmosphericBackdrop petals={12} />
+      <div className="relative z-10 mx-auto max-w-md text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.9 }}
+        >
+          <p className="text-[10px] tracking-[0.35em] uppercase text-crimson/70 mb-4">
+            · Daily letter ·
+          </p>
+          <h2 className="font-display text-4xl mb-4">Receive a daily word.</h2>
+          <p className="text-sm text-muted-foreground mb-10 max-w-sm mx-auto leading-relaxed">
+            Every morning, a motivational phrase delivered to your inbox. Just your name and
+            email — nothing else.
+          </p>
+
+          {status === "success" ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass rounded-2xl p-10"
+            >
+              <p className="font-display text-3xl text-crimson mb-3">命</p>
+              <p className="font-display text-xl mb-2">You're in.</p>
+              <p className="text-sm text-muted-foreground">
+                A letter will reach you every morning.
+              </p>
+            </motion.div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-3 text-left">
+              <label className="block glass rounded-xl px-4 py-3">
+                <span className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+                  Name
+                </span>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setErrorMsg("");
+                  }}
+                  placeholder="Your name"
+                  className="mt-1 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                />
+              </label>
+              <label className="block glass rounded-xl px-4 py-3">
+                <span className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+                  Email
+                </span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrorMsg("");
+                  }}
+                  placeholder="you@quiet.place"
+                  className="mt-1 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                />
+              </label>
+
+              {status === "error" && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-sm text-red-400"
+                >
+                  {errorMsg}
+                </motion.p>
+              )}
+
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="w-full rounded-xl bg-(--gradient-crimson) py-3 text-sm font-medium text-primary-foreground glow-crimson hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition"
+              >
+                {status === "loading" ? "Subscribing…" : "Receive daily motivation →"}
+              </button>
+            </form>
+          )}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden text-foreground">
       <Navbar />
@@ -114,7 +218,7 @@ export default function Home() {
             height={1280}
             className="h-full w-full object-cover opacity-70"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/40 to-background" />
+          <div className="absolute inset-0 bg-linear-to-b from-background/30 via-background/40 to-background" />
         </div>
 
         <AtmosphericBackdrop petals={22} />
@@ -142,35 +246,33 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.4, delay: 0.5 }}
-            className="mx-auto mt-8 max-w-xl text-balance text-white md:text-lg text-muted-foreground leading-relaxed"
+            className="mx-auto mt-8 max-w-xl text-balance text-white md:text-lg leading-relaxed"
           >
             Even after pain, confusion, heartbreak, or failure…
             <br />
             your story is still moving forward.
           </motion.p>
 
-          {!isAuthenticated && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, delay: 0.9 }}
-              className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.9 }}
+            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
+          >
+            <Link
+              to="/quotes"
+              className="group inline-flex items-center gap-2 rounded-full bg-(--gradient-crimson) px-7 py-3.5 text-sm font-medium text-primary-foreground glow-crimson hover:brightness-110 transition"
             >
-              <Link
-                to="/register"
-                className="group inline-flex items-center gap-2 rounded-full bg-(--gradient-crimson) px-7 py-3.5 text-sm font-medium text-primary-foreground glow-crimson hover:brightness-110 transition"
-              >
-                Begin Your Journey
-                <span className="transition group-hover:translate-x-1">→</span>
-              </Link>
-              <Link
-                to="/login"
-                className="glass rounded-full px-7 py-3.5 text-sm font-medium hover:bg-white/10 transition"
-              >
-                Enter Life Goes On
-              </Link>
-            </motion.div>
-          )}
+              Find your words
+              <span className="transition group-hover:translate-x-1">→</span>
+            </Link>
+            <a
+              href="#subscribe"
+              className="glass rounded-full px-7 py-3.5 text-sm font-medium hover:bg-white/10 transition"
+            >
+              Daily letter
+            </a>
+          </motion.div>
         </div>
 
         <motion.div
@@ -187,7 +289,7 @@ export default function Home() {
       <section className="relative py-32 px-4">
         <AtmosphericBackdrop petals={10} />
         <div className="relative z-10 mx-auto max-w-5xl grid md:grid-cols-3 gap-6">
-          {kanjis.map((c, i) => (
+          {KANJIS.map((c, i) => (
             <motion.div
               key={c.title}
               initial={{ opacity: 0, y: 30 }}
@@ -206,43 +308,40 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Infinite quote carousel — authenticated only */}
-      {isAuthenticated && (
-        <section className="relative py-16 px-0">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
-          >
-            <p className="text-center text-[10px] tracking-[0.35em] uppercase text-crimson/70 mb-8">
-              · Words that stay ·
-            </p>
-            <QuoteCarousel />
-          </motion.div>
-        </section>
-      )}
+      {/* Infinite quote carousel */}
+      <section className="relative py-16 px-0">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1 }}
+        >
+          <p className="text-center text-[10px] tracking-[0.35em] uppercase text-crimson/70 mb-8">
+            · Words that stay ·
+          </p>
+          <QuoteCarousel />
+        </motion.div>
+      </section>
 
-      {/* Quote */}
+      {/* Subscription form */}
+      <SubscribeSection />
+
+      {/* Signature quote */}
       <section className="relative py-48 px-4 overflow-hidden">
-        {/* Ghost background image */}
         <div className="absolute inset-0 -z-10">
           <img
-            src={samuraiFlute}
+            src={samuraiHero}
             alt="Samurai at rest beneath the moonlight"
             className="h-full w-full object-cover"
             style={{
               filter: "grayscale(1) brightness(0.18) contrast(1.3) sepia(0.4) hue-rotate(200deg)",
             }}
           />
-          {/* top fade */}
           <div className="absolute inset-0 bg-linear-to-b from-background via-transparent to-background" />
-          {/* indigo ghost veil */}
           <div className="absolute inset-0 bg-indigo-950/30 mix-blend-multiply" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-3xl text-center">
-          {/* decorative line */}
           <motion.div
             initial={{ scaleX: 0 }}
             whileInView={{ scaleX: 1 }}
@@ -275,7 +374,6 @@ export default function Home() {
             命 · Life Goes On
           </motion.p>
 
-          {/* decorative line */}
           <motion.div
             initial={{ scaleX: 0 }}
             whileInView={{ scaleX: 1 }}

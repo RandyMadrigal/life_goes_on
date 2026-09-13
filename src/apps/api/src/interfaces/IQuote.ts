@@ -1,7 +1,7 @@
-import type { Document } from "mongoose";
-import type { Mood } from "./IUser";
+import type { Document, Types } from "mongoose";
 
 export interface IQuote extends Document {
+  _id: Types.ObjectId;
   text: string;
-  moods: Mood[];
+  moods: string[];
 }

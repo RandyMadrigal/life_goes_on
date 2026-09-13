@@ -1,15 +1,13 @@
 import type { IQuoteRepository } from "./interfaces/IQuoteRepository";
 import type { IQuote } from "../interfaces/IQuote";
-import type { Mood } from "../interfaces/IUser";
 import { QuoteModel } from "../models/quote.model";
 
 export class QuoteRepository implements IQuoteRepository {
-  async findRandom(mood?: Mood): Promise<IQuote | null> {
+  async findMany(mood?: string, limit = 1): Promise<IQuote[]> {
     const match = mood ? { moods: mood } : {};
-    const results = await QuoteModel.aggregate<IQuote>([
+    return QuoteModel.aggregate<IQuote>([
       { $match: match },
-      { $sample: { size: 1 } },
+      { $sample: { size: limit } },
     ]);
-    return results[0] ?? null;
   }
 }

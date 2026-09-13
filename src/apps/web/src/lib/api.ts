@@ -26,9 +26,9 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T
 }
 
 export const api = {
-  get: <T>(path: string) => req<T>(path, { method: "GET" }),
-  post: <T>(path: string, data: unknown) =>
-    req<T>(path, { method: "POST", body: JSON.stringify(data) }),
-  patch: <T>(path: string, data: unknown) =>
-    req<T>(path, { method: "PATCH", body: JSON.stringify(data) }),
+  get:    <T>(path: string)                => req<T>(path, { method: "GET" }),
+  post:   <T>(path: string, data: unknown) => req<T>(path, { method: "POST",   body: JSON.stringify(data) }),
+  put:    <T>(path: string, data: unknown) => req<T>(path, { method: "PUT",    body: JSON.stringify(data) }),
+  patch:  <T>(path: string, data: unknown) => req<T>(path, { method: "PATCH",  body: JSON.stringify(data) }),
+  delete: <T>(path: string)               => req<T>(path, { method: "DELETE" }),
 };

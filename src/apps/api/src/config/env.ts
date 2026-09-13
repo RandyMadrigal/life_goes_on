@@ -19,6 +19,8 @@ const envSchema = z.object({
     .string()
     .default("12")
     .transform((v) => parseInt(v, 10)),
+  ADMIN_EMAIL: z.string().email(),
+  ADMIN_PASSWORD: z.string().min(8),
 });
 
 export type Env = z.infer<typeof envSchema>;

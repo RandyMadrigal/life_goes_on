@@ -1,14 +1,14 @@
 import { Router } from "express";
-import authRoutes from "./auth.routes";
-import userRoutes from "./user.routes";
+import subscriberRoutes from "./subscriber.routes";
 import quotesRoutes from "./quotes.routes";
-import lettersRoutes from "./letters.routes";
+import moodsRoutes from "./moods.routes";
+import adminRoutes from "./admin.routes";
 
 const router = Router();
 
-router.use("/auth", authRoutes);
-router.use("/users", userRoutes);
+router.use("/subscribe", subscriberRoutes);
 router.use("/quotes", quotesRoutes);
-router.use("/letters", lettersRoutes);
+router.use("/moods", moodsRoutes);
+router.use("/admin", adminRoutes);
 
 export default router;
