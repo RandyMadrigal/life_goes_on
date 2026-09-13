@@ -15,12 +15,15 @@ const envSchema = z.object({
   SENDGRID_API_KEY: z.string().default(""),
   FROM_EMAIL: z.string().email().default("noreply@lifegoeson.app"),
   FRONTEND_URL: z.string().url().default("http://localhost:5173"),
+  API_BASE_URL: z.string().url().default("http://localhost:3001"),
   BCRYPT_ROUNDS: z
     .string()
     .default("12")
     .transform((v) => parseInt(v, 10)),
   ADMIN_EMAIL: z.string().email(),
-  ADMIN_PASSWORD: z.string().min(8),
+  ADMIN_PASSWORD_HASH: z
+    .string()
+    .regex(/^\$2[aby]\$\d{2}\$/, "ADMIN_PASSWORD_HASH must be a bcrypt hash (generate with `npx bcrypt-cli` or the hash script)"),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,4 +1,4 @@
-export const motivationalTemplate = (name: string, message: string): string => `
+export const motivationalTemplate = (name: string, message: string, unsubscribeUrl: string): string => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,8 +15,11 @@ export const motivationalTemplate = (name: string, message: string): string => `
       ${message}
     </div>
     <p style="font-size:13px;color:#8a8a9a;margin:0 0 40px;">— Life Goes On</p>
-    <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#555562;margin:0;">
+    <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#555562;margin:0 0 32px;">
       命 · Even slowly · You are still here
+    </p>
+    <p style="font-size:11px;color:#555562;margin:0;">
+      <a href="${unsubscribeUrl}" style="color:#8a8a9a;">Unsubscribe</a> from these daily messages.
     </p>
   </div>
 </body>

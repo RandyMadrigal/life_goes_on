@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { subscribe } from "../controllers/subscriber.controller";
+import { subscribe, unsubscribe } from "../controllers/subscriber.controller";
+import { subscribeLimiter } from "../middlewares/rateLimiter.middleware";
 
 const router = Router();
 
-router.post("/", subscribe);
+router.post("/", subscribeLimiter, subscribe);
+router.get("/unsubscribe", unsubscribe);
 
 export default router;

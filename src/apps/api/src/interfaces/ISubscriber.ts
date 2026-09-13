@@ -6,4 +6,5 @@ export interface ISubscriber extends Document {
   email: string;
   active: boolean;
   subscribedAt: Date;
+  unsubscribeToken: string;
 }

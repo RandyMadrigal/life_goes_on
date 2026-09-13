@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { QuoteModel } from "../models/quote.model";
 import { MoodModel } from "../models/mood.model";
 import { env } from "../config/env";
@@ -16,10 +17,18 @@ const COOKIE_OPTS = {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body as { email?: string; password?: string };
-  if (!email || !password || email !== env.ADMIN_EMAIL || password !== env.ADMIN_PASSWORD) {
+
+  const isValidEmail = typeof email === "string" && email === env.ADMIN_EMAIL;
+  // Always run bcrypt.compare (even with a placeholder) so a wrong email doesn't
+  // short-circuit before the password check, which would leak email validity via timing.
+  const isValidPassword =
+    typeof password === "string" && (await bcrypt.compare(password, env.ADMIN_PASSWORD_HASH));
+
+  if (!isValidEmail || !isValidPassword) {
     res.status(401).json({ success: false, message: "Credenciales inválidas" });
     return;
   }
+
   const token = jwt.sign({ role: "admin" }, env.JWT_ACCESS_SECRET, { expiresIn: "8h" });
   res.cookie("admin_token", token, COOKIE_OPTS);
   res.status(200).json({ success: true, message: "Sesión iniciada" });

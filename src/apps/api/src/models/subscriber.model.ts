@@ -7,6 +7,7 @@ const subscriberSchema = new Schema<ISubscriber>(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     active: { type: Boolean, default: true },
     subscribedAt: { type: Date, default: Date.now },
+    unsubscribeToken: { type: String, unique: true, sparse: true },
   },
   { timestamps: false },
 );

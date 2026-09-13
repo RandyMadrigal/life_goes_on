@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { adminAuth } from "../middlewares/adminAuth.middleware";
+import { authLimiter } from "../middlewares/rateLimiter.middleware";
 import {
   login, logout,
   getQuotes, createQuote, updateQuote, deleteQuote,
@@ -10,7 +11,7 @@ import {
 const router = Router();
 
 // Public
-router.post("/login", asyncHandler(login));
+router.post("/login", authLimiter, asyncHandler(login));
 
 // Protected
 router.use(adminAuth);

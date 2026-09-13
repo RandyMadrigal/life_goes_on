@@ -9,7 +9,11 @@ export const adminAuth = (req: Request, res: Response, next: NextFunction): void
     return;
   }
   try {
-    jwt.verify(token, env.JWT_ACCESS_SECRET);
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET);
+    if (typeof payload !== "object" || payload === null || payload.role !== "admin") {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
     next();
   } catch {
     res.status(401).json({ success: false, message: "Unauthorized" });

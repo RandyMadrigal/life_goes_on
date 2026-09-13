@@ -29,7 +29,16 @@ export class EmailService implements IEmailService {
     }
   }
 
-  async sendMotivationalMessage(to: string, name: string, message: string): Promise<void> {
-    await this.send(to, "A message for you — Life Goes On 命", motivationalTemplate(name, message));
+  async sendMotivationalMessage(
+    to: string,
+    name: string,
+    message: string,
+    unsubscribeUrl: string,
+  ): Promise<void> {
+    await this.send(
+      to,
+      "A message for you — Life Goes On 命",
+      motivationalTemplate(name, message, unsubscribeUrl),
+    );
   }
 }

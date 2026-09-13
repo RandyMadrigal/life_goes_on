@@ -39,3 +39,17 @@ export const forgotPasswordLimiter = rateLimit({
     );
   },
 });
+
+export const subscribeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, _res, next) => {
+    next(
+      ApiError.tooManyRequests(
+        "Too many subscription attempts. Please try again in one hour.",
+      ),
+    );
+  },
+});
