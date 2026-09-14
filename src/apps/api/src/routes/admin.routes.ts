@@ -15,6 +15,7 @@ import {
   updateMood,
   deleteMood,
 } from "../controllers/admin.controller";
+import { getSubscribers } from "../controllers/subscriber.controller";
 
 const router = Router();
 
@@ -33,5 +34,6 @@ router.delete("/quotes/:id", asyncHandler(deleteQuote));
 router.post("/moods", asyncHandler(createMood));
 router.put("/moods/:id", asyncHandler(updateMood));
 router.delete("/moods/:id", asyncHandler(deleteMood));
+router.get("/subscribers", getSubscribers);
 
 export default router;

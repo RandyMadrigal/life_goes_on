@@ -5,4 +5,9 @@ export interface ISubscriberRepository {
   create(name: string, email: string): Promise<ISubscriber>;
   findAllActive(): Promise<ISubscriber[]>;
   deactivateByToken(token: string): Promise<ISubscriber | null>;
+  findPaginated(
+    page: number,
+    limit: number,
+    search?: string,
+  ): Promise<{ subscribers: ISubscriber[]; total: number }>;
 }

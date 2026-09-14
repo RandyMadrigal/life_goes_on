@@ -3,6 +3,7 @@ import { z } from "zod";
 import { SubscriberRepository } from "../repositories/subscriber.repository";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
+import { toAdminSubscriberDTO } from "../utils/dto.mappers";
 
 const subscriberRepo = new SubscriberRepository();
 
@@ -36,6 +37,26 @@ export const subscribe = asyncHandler(async (req: Request, res: Response): Promi
     ApiResponse.ok("Subscribed successfully.", {
       name: subscriber.name,
       email: subscriber.email,
+    }),
+  );
+});
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+// Protected by adminAuth at the route level (see admin.routes.ts).
+
+export const getSubscribers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const search = typeof req.query.search === "string" ? req.query.search : undefined;
+
+  const { subscribers, total } = await subscriberRepo.findPaginated(page, limit, search);
+
+  res.status(200).json(
+    ApiResponse.ok("ok", {
+      subscribers: subscribers.map(toAdminSubscriberDTO),
+      total,
+      page,
+      limit,
     }),
   );
 });

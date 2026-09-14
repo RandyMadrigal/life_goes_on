@@ -1,13 +1,24 @@
 import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import type { QuoteDTO as Quote, MoodDTO as Mood } from "life-goes-on-shared";
+import type {
+  QuoteDTO as Quote,
+  MoodDTO as Mood,
+  AdminSubscriberDTO as Subscriber,
+} from "life-goes-on-shared";
 import { api } from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface QuotesResponse {
   quotes: Quote[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface SubscribersResponse {
+  subscribers: Subscriber[];
   total: number;
   page: number;
   limit: number;
@@ -217,7 +228,7 @@ function MoodForm({
 
 // ── AdminDashboard ─────────────────────────────────────────────────────────────
 
-type Tab = "quotes" | "moods";
+type Tab = "quotes" | "moods" | "subscribers";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -243,7 +254,15 @@ export default function AdminDashboard() {
   const [deleteMoodId, setDeleteMoodId] = useState<string | null>(null);
   const [deletingMood, setDeletingMood] = useState(false);
 
+  // ── Subscribers state ─────────────────────────────────────────────────────
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [subscriberTotal, setSubscriberTotal] = useState(0);
+  const [subscriberPage, setSubscriberPage] = useState(1);
+  const [subscriberSearch, setSubscriberSearch] = useState("");
+  const [subscribersLoading, setSubscribersLoading] = useState(true);
+
   const totalPages = Math.ceil(total / LIMIT);
+  const subscriberTotalPages = Math.ceil(subscriberTotal / LIMIT);
 
   // ── Fetch moods ───────────────────────────────────────────────────────────
   const fetchMoods = useCallback(async () => {
@@ -283,6 +302,31 @@ export default function AdminDashboard() {
   useEffect(() => {
     setPage(1);
   }, [filterMood, search]);
+
+  // ── Fetch subscribers ─────────────────────────────────────────────────────
+  const fetchSubscribers = useCallback(
+    async (p = subscriberPage) => {
+      setSubscribersLoading(true);
+      const params = new URLSearchParams({ page: String(p), limit: String(LIMIT) });
+      if (subscriberSearch) params.set("search", subscriberSearch);
+      const result = await api.get<SubscribersResponse>(`/api/v1/admin/subscribers?${params}`);
+      setSubscribersLoading(false);
+      if (!result.ok) {
+        if (result.message === "Unauthorized") navigate("/admin/login");
+        return;
+      }
+      setSubscribers(result.data.subscribers);
+      setSubscriberTotal(result.data.total);
+    },
+    [subscriberPage, subscriberSearch, navigate],
+  );
+
+  useEffect(() => {
+    void fetchSubscribers(subscriberPage);
+  }, [fetchSubscribers, subscriberPage]);
+  useEffect(() => {
+    setSubscriberPage(1);
+  }, [subscriberSearch]);
 
   // ── Logout ────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
@@ -345,7 +389,7 @@ export default function AdminDashboard() {
           <div>
             <p className="text-sm font-medium text-foreground">Life Goes On — Admin</p>
             <p className="text-xs text-muted-foreground">
-              {total} frases · {moods.length} estados
+              {total} frases · {moods.length} estados · {subscriberTotal} suscriptores
             </p>
           </div>
         </div>
@@ -359,7 +403,7 @@ export default function AdminDashboard() {
 
       {/* ── Tabs ────────────────────────────────────────────────────────────── */}
       <div className="border-b border-white/10 px-6 flex gap-1">
-        {(["quotes", "moods"] as Tab[]).map((t) => (
+        {(["quotes", "moods", "subscribers"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -369,7 +413,7 @@ export default function AdminDashboard() {
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t === "quotes" ? "Frases" : "Estados de ánimo"}
+            {t === "quotes" ? "Frases" : t === "moods" ? "Estados de ánimo" : "Suscriptores"}
           </button>
         ))}
       </div>
@@ -605,6 +649,103 @@ export default function AdminDashboard() {
                       </div>
                     </motion.div>
                   ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ══ SUBSCRIBERS TAB ═════════════════════════════════════════════ */}
+          {tab === "subscribers" && (
+            <motion.div
+              key="subscribers"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Controls */}
+              <div className="mb-6">
+                <input
+                  type="text"
+                  value={subscriberSearch}
+                  onChange={(e) => setSubscriberSearch(e.target.value)}
+                  placeholder="Buscar por nombre o correo..."
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-crimson/60 transition"
+                />
+              </div>
+
+              {/* List */}
+              {subscribersLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="glass rounded-xl p-4 animate-pulse">
+                      <div className="h-3 bg-white/10 rounded w-1/3 mb-2" />
+                      <div className="h-3 bg-white/10 rounded w-1/2" />
+                    </div>
+                  ))}
+                </div>
+              ) : subscribers.length === 0 ? (
+                <div className="text-center py-20 text-muted-foreground text-sm">
+                  No se encontraron suscriptores.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {subscribers.map((s) => (
+                    <motion.div
+                      key={s._id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.97 }}
+                      className="glass rounded-xl p-4 border-l-2 border-white/10 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm text-foreground/90 truncate">{s.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{s.email}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span
+                          className={`text-[10px] rounded-full px-2 py-0.5 ${
+                            s.active
+                              ? "bg-emerald-500/10 text-emerald-400"
+                              : "bg-white/8 text-muted-foreground"
+                          }`}
+                        >
+                          {s.active ? "Activo" : "Dado de baja"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/60">
+                          {new Date(s.subscribedAt).toLocaleDateString("es", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {subscriberTotalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-4">
+                  <button
+                    onClick={() => setSubscriberPage((p) => Math.max(1, p - 1))}
+                    disabled={subscriberPage === 1}
+                    className="glass rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    ← Anterior
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    {subscriberPage} / {subscriberTotalPages}
+                  </span>
+                  <button
+                    onClick={() => setSubscriberPage((p) => Math.min(subscriberTotalPages, p + 1))}
+                    disabled={subscriberPage === subscriberTotalPages}
+                    className="glass rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    Siguiente →
+                  </button>
                 </div>
               )}
             </motion.div>

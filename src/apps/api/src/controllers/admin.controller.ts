@@ -6,6 +6,7 @@ import { QuoteModel } from "../models/quote.model";
 import { MoodModel } from "../models/mood.model";
 import { env } from "../config/env";
 import { toQuoteDTO, toMoodDTO } from "../utils/dto.mappers";
+import { escapeRegex } from "../utils/regex";
 import { AdminRepository } from "../repositories/admin.repository";
 import { EmailService } from "../services/email.service";
 
@@ -113,7 +114,7 @@ export const getQuotes = async (req: Request, res: Response): Promise<void> => {
 
   const filter: Record<string, unknown> = {};
   if (mood) filter.moods = mood;
-  if (search) filter.text = { $regex: search, $options: "i" };
+  if (search) filter.text = { $regex: escapeRegex(search), $options: "i" };
 
   const [quotes, total] = await Promise.all([
     QuoteModel.find(filter)
