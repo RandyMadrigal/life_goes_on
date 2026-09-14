@@ -20,6 +20,8 @@ export default function AdminLogin() {
       password,
     });
     setLoading(false);
+    setEmail("");
+    setPassword("");
     if (result.ok) {
       setAccessToken(result.data.accessToken);
       navigate("/admin");
@@ -36,6 +38,13 @@ export default function AdminLogin() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-sm"
       >
+        <Link
+          to="/"
+          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition"
+        >
+          ← Volver al inicio
+        </Link>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-(--gradient-crimson) glow-crimson text-2xl font-display">

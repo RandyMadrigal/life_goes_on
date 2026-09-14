@@ -3,6 +3,7 @@ import type { ISubscriberRepository } from "./interfaces/ISubscriberRepository";
 import type { ISubscriber } from "../interfaces/ISubscriber";
 import { SubscriberModel } from "../models/subscriber.model";
 import { escapeRegex } from "../utils/regex";
+import { hashToken } from "../utils/hashToken";
 
 export class SubscriberRepository implements ISubscriberRepository {
   async findByEmail(email: string): Promise<ISubscriber | null> {
@@ -10,8 +11,8 @@ export class SubscriberRepository implements ISubscriberRepository {
   }
 
   async create(name: string, email: string): Promise<ISubscriber> {
-    const unsubscribeToken = randomBytes(32).toString("hex");
-    return SubscriberModel.create({ name, email, unsubscribeToken });
+    const unsubscribeTokenHash = hashToken(randomBytes(32).toString("hex"));
+    return SubscriberModel.create({ name, email, unsubscribeTokenHash });
   }
 
   async findAllActive(): Promise<ISubscriber[]> {
@@ -20,10 +21,19 @@ export class SubscriberRepository implements ISubscriberRepository {
 
   async deactivateByToken(token: string): Promise<ISubscriber | null> {
     return SubscriberModel.findOneAndUpdate(
-      { unsubscribeToken: token },
-      { active: false },
+      { unsubscribeTokenHash: hashToken(token) },
+      { active: false, unsubscribedAt: new Date() },
       { new: true },
     ).exec();
+  }
+
+  async rotateUnsubscribeToken(subscriberId: ISubscriber["_id"]): Promise<string> {
+    const token = randomBytes(32).toString("hex");
+    await SubscriberModel.updateOne(
+      { _id: subscriberId },
+      { unsubscribeTokenHash: hashToken(token) },
+    ).exec();
+    return token;
   }
 
   async findPaginated(

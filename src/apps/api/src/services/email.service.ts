@@ -1,8 +1,9 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "../config/env";
-import type { IEmailService } from "./interfaces/IEmailService";
+import type { IEmailService, SendResult } from "./interfaces/IEmailService";
 import { motivationalTemplate } from "./templates/motivational.template";
 import { resetPasswordTemplate } from "./templates/resetPassword.template";
+import { maskEmail } from "../utils/maskEmail";
 
 const TIMEOUT_MS = 10_000;
 
@@ -41,10 +42,11 @@ export class EmailService implements IEmailService {
     }
   }
 
-  private async send(to: string, subject: string, html: string): Promise<void> {
+  private async send(to: string, subject: string, html: string): Promise<SendResult> {
     if (!this.configured) {
-      console.log(`[EmailService] SMTP not configured — skipped. To: ${to} | Subject: ${subject}`);
-      return;
+      const error = "SMTP not configured (SMTP_USER/SMTP_PASS unset)";
+      console.log(`[EmailService] ${error} — skipped. To: ${maskEmail(to)} | Subject: ${subject}`);
+      return { success: false, error };
     }
     try {
       await this.transporter.sendMail({
@@ -53,10 +55,12 @@ export class EmailService implements IEmailService {
         subject,
         html,
       });
-      console.log(`[EmailService] Sent → ${to}`);
+      console.log(`[EmailService] Sent → ${maskEmail(to)}`);
+      return { success: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[EmailService] Failed → ${to} | ${message}`);
+      console.error(`[EmailService] Failed → ${maskEmail(to)} | ${message}`);
+      return { success: false, error: message };
     }
   }
 
@@ -65,16 +69,16 @@ export class EmailService implements IEmailService {
     name: string,
     message: string,
     unsubscribeUrl: string,
-  ): Promise<void> {
-    await this.send(
+  ): Promise<SendResult> {
+    return this.send(
       to,
       "A message for you — Life Goes On 命",
       motivationalTemplate(name, message, unsubscribeUrl),
     );
   }
 
-  async sendPasswordReset(to: string, resetUrl: string): Promise<void> {
-    await this.send(
+  async sendPasswordReset(to: string, resetUrl: string): Promise<SendResult> {
+    return this.send(
       to,
       "Reset your admin password — Life Goes On",
       resetPasswordTemplate(resetUrl),

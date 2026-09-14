@@ -1,48 +1,79 @@
-import { randomBytes } from "crypto";
-import cron from "node-cron";
 import { SubscriberModel } from "../models/subscriber.model";
 import { EmailService } from "../services/email.service";
 import { QuoteRepository } from "../repositories/quote.repository";
+import { SubscriberRepository } from "../repositories/subscriber.repository";
+import { EmailDeliveryRepository } from "../repositories/emailDelivery.repository";
+import { startOfUtcDay } from "../utils/date.utils";
 import { env } from "../config/env";
 
 const quoteRepo = new QuoteRepository();
+const subscriberRepo = new SubscriberRepository();
+const deliveryRepo = new EmailDeliveryRepository();
+const emailService = new EmailService();
 
 const buildUnsubscribeUrl = (token: string): string =>
   `${env.API_BASE_URL}/api/v1/subscribe/unsubscribe?token=${token}`;
 
-export const scheduleMotivationalEmails = (): void => {
-  const emailService = new EmailService();
+export interface SendDailyEmailsResult {
+  total: number;
+  sent: number;
+  failed: number;
+  skipped: number;
+}
 
-  // Every day at 08:00 UTC
-  cron.schedule("0 8 * * *", async () => {
-    try {
-      const subscribers = await SubscriberModel.find({ active: true }).exec();
-      if (subscribers.length === 0) return;
+/**
+ * Sends today's motivational email to every active subscriber who hasn't
+ * already received one today. Safe to call more than once for the same day
+ * — subscribers with an existing EmailDelivery record for today are skipped,
+ * so a retried/duplicated trigger never double-sends.
+ */
+export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
+  const today = startOfUtcDay();
+  const subscribers = await SubscriberModel.find({ active: true }).exec();
 
-      const results = await Promise.allSettled(
-        subscribers.map(async (sub) => {
-          // Safety net for records created before unsubscribeToken existed.
-          if (!sub.unsubscribeToken) {
-            sub.unsubscribeToken = randomBytes(32).toString("hex");
-            await sub.save();
-          }
-          const [quote] = await quoteRepo.findMany(undefined, 1);
-          if (!quote) throw new Error("No quotes in database");
-          return emailService.sendMotivationalMessage(
-            sub.email,
-            sub.name,
-            quote.text,
-            buildUnsubscribeUrl(sub.unsubscribeToken),
-          );
-        }),
+  if (subscribers.length === 0) {
+    return { total: 0, sent: 0, failed: 0, skipped: 0 };
+  }
+
+  let sent = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  await Promise.allSettled(
+    subscribers.map(async (sub) => {
+      if (await deliveryRepo.existsForDate(sub._id, today)) {
+        skipped += 1;
+        return;
+      }
+
+      const [quote] = await quoteRepo.findMany(undefined, 1);
+      if (!quote) throw new Error("No quotes in database");
+
+      // Fresh token per send: the same subscriber gets a new unsubscribe
+      // link in every email, so a leaked/stale token from an old email
+      // can't be replayed — see the design note in subscriber.repository.ts.
+      const unsubscribeToken = await subscriberRepo.rotateUnsubscribeToken(sub._id);
+
+      const result = await emailService.sendMotivationalMessage(
+        sub.email,
+        sub.name,
+        quote.text,
+        buildUnsubscribeUrl(unsubscribeToken),
       );
 
-      const sent = results.filter((r) => r.status === "fulfilled").length;
-      console.log(`📬  Sent daily motivation to ${sent}/${subscribers.length} subscriber(s)`);
-    } catch (err) {
-      console.error("📬  Email job error:", err);
-    }
-  });
+      if (result.success) {
+        await deliveryRepo.record(sub._id, quote._id, today, "sent");
+        sent += 1;
+      } else {
+        await deliveryRepo.record(sub._id, quote._id, today, "failed", result.error);
+        failed += 1;
+      }
+    }),
+  );
 
-  console.log("📬  Email scheduler initialized — runs daily at 08:00 UTC");
+  console.log(
+    `📬  Daily email run: ${sent} sent, ${failed} failed, ${skipped} already sent today (of ${subscribers.length} active)`,
+  );
+
+  return { total: subscribers.length, sent, failed, skipped };
 };

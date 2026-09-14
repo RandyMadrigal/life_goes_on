@@ -30,6 +30,9 @@ const envSchema = z.object({
     .string()
     .default("12")
     .transform((v) => parseInt(v, 10)),
+  // Shared secret for the external cron trigger (cron-job.org) — see
+  // middlewares/cronAuth.middleware.ts and routes/jobs.routes.ts.
+  CRON_SECRET: z.string().min(32, "CRON_SECRET must be at least 32 chars"),
   ADMIN_EMAIL: z.string().email(),
   ADMIN_PASSWORD_HASH: z
     .string()
