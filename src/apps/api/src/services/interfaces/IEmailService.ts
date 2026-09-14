@@ -1,3 +1,8 @@
+export interface SendResult {
+  success: boolean;
+  error?: string;
+}
+
 export interface IEmailService {
   /** Checks the mail transport's connection/credentials without sending anything. */
   verifyConnection(): Promise<void>;
@@ -6,6 +11,6 @@ export interface IEmailService {
     name: string,
     message: string,
     unsubscribeUrl: string,
-  ): Promise<void>;
-  sendPasswordReset(to: string, resetUrl: string): Promise<void>;
+  ): Promise<SendResult>;
+  sendPasswordReset(to: string, resetUrl: string): Promise<SendResult>;
 }

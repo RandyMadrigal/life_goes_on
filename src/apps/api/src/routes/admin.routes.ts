@@ -17,6 +17,7 @@ import {
   deleteMood,
 } from "../controllers/admin.controller";
 import { getSubscribers } from "../controllers/subscriber.controller";
+import { getTodaysDeliverySummary } from "../controllers/delivery.controller";
 
 const router = Router();
 
@@ -39,5 +40,6 @@ router.post("/moods", asyncHandler(createMood));
 router.put("/moods/:id", asyncHandler(updateMood));
 router.delete("/moods/:id", asyncHandler(deleteMood));
 router.get("/subscribers", getSubscribers);
+router.get("/deliveries/today", asyncHandler(getTodaysDeliverySummary));
 
 export default router;

@@ -19,11 +19,12 @@ export const toMoodDTO = (m: Pick<IMood, "_id" | "name" | "label" | "order">): M
 });
 
 export const toAdminSubscriberDTO = (
-  s: Pick<ISubscriber, "_id" | "name" | "email" | "active" | "subscribedAt">,
+  s: Pick<ISubscriber, "_id" | "name" | "email" | "active" | "subscribedAt" | "unsubscribedAt">,
 ): AdminSubscriberDTO => ({
   _id: s._id.toString(),
   name: s.name,
   email: s.email,
   active: s.active,
   subscribedAt: s.subscribedAt.toISOString(),
+  unsubscribedAt: s.unsubscribedAt ? s.unsubscribedAt.toISOString() : null,
 });

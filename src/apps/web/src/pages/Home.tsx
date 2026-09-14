@@ -104,6 +104,10 @@ function SubscribeSection() {
       name,
       email,
     });
+    // Clear the form either way — on success it's hidden behind the
+    // confirmation message anyway; on failure the fields still reset.
+    setName("");
+    setEmail("");
     if (result.ok) {
       setStatus("success");
     } else {

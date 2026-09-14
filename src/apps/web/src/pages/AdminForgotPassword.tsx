@@ -14,6 +14,7 @@ export default function AdminForgotPassword() {
     setLoading(true);
     const result = await api.post<{ message: string }>("/api/v1/admin/forgot-password", { email });
     setLoading(false);
+    setEmail("");
     setSubmitted(true);
     setMessage(result.ok ? result.data.message : result.message);
   };

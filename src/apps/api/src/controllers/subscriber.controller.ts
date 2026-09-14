@@ -4,6 +4,7 @@ import { SubscriberRepository } from "../repositories/subscriber.repository";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
 import { toAdminSubscriberDTO } from "../utils/dto.mappers";
+import { escapeHtml } from "../utils/escapeHtml";
 
 const subscriberRepo = new SubscriberRepository();
 
@@ -107,7 +108,7 @@ export const unsubscribe = asyncHandler(async (req: Request, res: Response): Pro
     .send(
       htmlPage(
         "Unsubscribed",
-        `<p style="font-size:20px;">You've been unsubscribed, ${subscriber.name}.</p><p style="color:#8a8a9a;font-size:14px;">You won't receive any more daily messages from us.</p>`,
+        `<p style="font-size:20px;">You've been unsubscribed, ${escapeHtml(subscriber.name)}.</p><p style="color:#8a8a9a;font-size:14px;">You won't receive any more daily messages from us.</p>`,
       ),
     );
 });

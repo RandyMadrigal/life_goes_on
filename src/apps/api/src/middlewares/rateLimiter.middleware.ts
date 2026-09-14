@@ -47,3 +47,13 @@ export const subscribeLimiter = rateLimit({
     next(ApiError.tooManyRequests("Too many subscription attempts. Please try again in one hour."));
   },
 });
+
+export const cronLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // the real trigger fires once/day — this just blunts secret-guessing floods
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, _res, next) => {
+    next(ApiError.tooManyRequests("Too many requests. Please try again later."));
+  },
+});

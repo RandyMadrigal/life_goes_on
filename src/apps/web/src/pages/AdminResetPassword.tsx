@@ -33,6 +33,8 @@ export default function AdminResetPassword() {
       password,
     });
     setLoading(false);
+    setPassword("");
+    setConfirm("");
 
     if (result.ok) {
       setSuccess(true);

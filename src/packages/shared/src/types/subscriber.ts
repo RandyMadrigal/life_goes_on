@@ -9,4 +9,5 @@ export interface AdminSubscriberDTO extends SubscriberDTO {
   _id: string;
   active: boolean;
   subscribedAt: string;
+  unsubscribedAt: string | null;
 }

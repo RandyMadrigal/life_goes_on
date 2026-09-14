@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { randomBytes, randomUUID, createHash } from "crypto";
+import { z } from "zod";
+import { randomBytes, randomUUID } from "crypto";
 import { QuoteModel } from "../models/quote.model";
 import { MoodModel } from "../models/mood.model";
 import { env } from "../config/env";
@@ -8,6 +9,7 @@ import { toQuoteDTO, toMoodDTO } from "../utils/dto.mappers";
 import { escapeRegex } from "../utils/regex";
 import { parseDurationMs } from "../utils/duration";
 import { hashPassword, comparePassword } from "../utils/password.utils";
+import { hashToken } from "../utils/hashToken";
 import { AdminRepository } from "../repositories/admin.repository";
 import { RefreshTokenRepository } from "../repositories/refreshToken.repository";
 import { EmailService } from "../services/email.service";
@@ -17,9 +19,31 @@ const adminRepo = new AdminRepository();
 const refreshTokenRepo = new RefreshTokenRepository();
 const emailService = new EmailService();
 
-const hashToken = (token: string): string => createHash("sha256").update(token).digest("hex");
-
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1h
+
+const loginSchema = z
+  .object({ email: z.string().trim().email(), password: z.string().min(1) })
+  .strict();
+const forgotPasswordSchema = z.object({ email: z.string().trim().email() }).strict();
+const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1),
+    password: z.string().min(8, "Token y contraseña (mín. 8 caracteres) son requeridos"),
+  })
+  .strict();
+const quoteSchema = z
+  .object({
+    text: z.string().trim().min(1).max(1000),
+    moods: z.array(z.string().trim().min(1)).min(1),
+  })
+  .strict();
+const createMoodSchema = z
+  .object({
+    label: z.string().trim().min(1).max(100),
+    name: z.string().trim().min(1).max(100).optional(),
+  })
+  .strict();
+const updateMoodSchema = z.object({ label: z.string().trim().min(1).max(100) }).strict();
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 //
@@ -63,10 +87,15 @@ const issueRefreshToken = async (
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-  const { email, password } = req.body as { email?: string; password?: string };
+  // A malformed body is treated the same as wrong credentials (generic 401
+  // below) rather than a distinct 400 — folding validation failures into
+  // the same response keeps the login endpoint from leaking anything about
+  // *why* a request failed.
+  const parsed = loginSchema.safeParse(req.body);
+  const email = parsed.success ? parsed.data.email : undefined;
+  const password = parsed.success ? parsed.data.password : undefined;
 
-  const admin =
-    typeof email === "string" ? await adminRepo.findByEmail(email.toLowerCase().trim()) : null;
+  const admin = email ? await adminRepo.findByEmail(email.toLowerCase()) : null;
   const isValidPassword =
     typeof password === "string" && (await comparePassword(password, admin?.passwordHash));
 
@@ -133,12 +162,12 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
-  const { email } = req.body as { email?: string };
   const GENERIC_MESSAGE =
     "Si el correo es válido, recibirás un enlace para restablecer tu contraseña.";
+  const parsed = forgotPasswordSchema.safeParse(req.body);
 
-  if (typeof email === "string" && email.trim()) {
-    const normalizedEmail = email.toLowerCase().trim();
+  if (parsed.success) {
+    const normalizedEmail = parsed.data.email.toLowerCase();
     const admin = await adminRepo.findByEmail(normalizedEmail);
 
     if (admin) {
@@ -157,14 +186,16 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 };
 
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
-  const { token, password } = req.body as { token?: string; password?: string };
-
-  if (!token || !password || password.length < 8) {
-    res
-      .status(400)
-      .json({ success: false, message: "Token y contraseña (mín. 8 caracteres) son requeridos" });
+  const parsed = resetPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      success: false,
+      message:
+        parsed.error.errors[0]?.message ?? "Token y contraseña (mín. 8 caracteres) son requeridos",
+    });
     return;
   }
+  const { token, password } = parsed.data;
 
   const admin = await adminRepo.findByValidResetToken(hashToken(token));
   if (!admin) {
@@ -211,27 +242,26 @@ export const getQuotes = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const createQuote = async (req: Request, res: Response): Promise<void> => {
-  const { text, moods } = req.body as { text?: string; moods?: string[] };
-  if (!text?.trim() || !moods?.length) {
+  const parsed = quoteSchema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({ success: false, message: "text y moods son requeridos" });
     return;
   }
-  const quote = await QuoteModel.create({ text: text.trim(), moods });
+  const quote = await QuoteModel.create(parsed.data);
   res.status(201).json({ success: true, data: { quote: toQuoteDTO(quote) } });
 };
 
 export const updateQuote = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { text, moods } = req.body as { text?: string; moods?: string[] };
-  if (!text?.trim() || !moods?.length) {
+  const parsed = quoteSchema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({ success: false, message: "text y moods son requeridos" });
     return;
   }
-  const quote = await QuoteModel.findByIdAndUpdate(
-    id,
-    { text: text.trim(), moods },
-    { new: true, runValidators: true },
-  ).lean();
+  const quote = await QuoteModel.findByIdAndUpdate(id, parsed.data, {
+    new: true,
+    runValidators: true,
+  }).lean();
   if (!quote) {
     res.status(404).json({ success: false, message: "Frase no encontrada" });
     return;
@@ -259,30 +289,30 @@ const toLabelName = (label: string): string =>
     .join("");
 
 export const createMood = async (req: Request, res: Response): Promise<void> => {
-  const { label, name: rawName } = req.body as { label?: string; name?: string };
-  if (!label?.trim()) {
+  const parsed = createMoodSchema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({ success: false, message: "label es requerido" });
     return;
   }
-  const name = rawName?.trim() || toLabelName(label);
+  const { label, name: rawName } = parsed.data;
+  const name = rawName || toLabelName(label);
   const maxOrder = await MoodModel.findOne().sort({ order: -1 }).select("order").lean();
   const order = (maxOrder?.order ?? -1) + 1;
-  const mood = await MoodModel.create({ name, label: label.trim(), order });
+  const mood = await MoodModel.create({ name, label, order });
   res.status(201).json({ success: true, data: { mood: toMoodDTO(mood) } });
 };
 
 export const updateMood = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { label } = req.body as { label?: string };
-  if (!label?.trim()) {
+  const parsed = updateMoodSchema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({ success: false, message: "label es requerido" });
     return;
   }
-  const mood = await MoodModel.findByIdAndUpdate(
-    id,
-    { label: label.trim() },
-    { new: true, runValidators: true },
-  ).lean();
+  const mood = await MoodModel.findByIdAndUpdate(id, parsed.data, {
+    new: true,
+    runValidators: true,
+  }).lean();
   if (!mood) {
     res.status(404).json({ success: false, message: "Estado no encontrado" });
     return;

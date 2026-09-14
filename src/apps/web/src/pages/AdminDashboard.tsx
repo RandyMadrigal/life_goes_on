@@ -5,6 +5,7 @@ import type {
   QuoteDTO as Quote,
   MoodDTO as Mood,
   AdminSubscriberDTO as Subscriber,
+  DeliverySummaryDTO,
 } from "life-goes-on-shared";
 import { api } from "@/lib/api";
 import { setAccessToken } from "@/lib/authToken";
@@ -72,6 +73,16 @@ function QuoteForm({
         })
       : await api.post<{ quote: Quote }>("/api/v1/admin/quotes", { text, moods: selected });
     setLoading(false);
+    if (initial) {
+      // Editing: on failure, revert to the original values instead of
+      // wiping the edit — losing your place in a long quote is worse than
+      // just seeing the error and trying again.
+      setText(initial.text);
+      setSelected(initial.moods);
+    } else {
+      setText("");
+      setSelected([]);
+    }
     if (result.ok) onSave(result.data.quote);
     else setError(result.message);
   };
@@ -171,6 +182,8 @@ function MoodForm({
       ? await api.put<{ mood: Mood }>(`/api/v1/admin/moods/${initial._id}`, { label })
       : await api.post<{ mood: Mood }>("/api/v1/admin/moods", { label, name: toLabelName(label) });
     setLoading(false);
+    // Editing: on failure, revert to the original label instead of wiping it.
+    setLabel(initial ? initial.label : "");
     if (result.ok) onSave(result.data.mood);
     else setError(result.message);
   };
@@ -262,8 +275,18 @@ export default function AdminDashboard() {
   const [subscriberSearch, setSubscriberSearch] = useState("");
   const [subscribersLoading, setSubscribersLoading] = useState(true);
 
+  // ── Delivery summary state ────────────────────────────────────────────────
+  const [deliverySummary, setDeliverySummary] = useState<DeliverySummaryDTO | null>(null);
+
   const totalPages = Math.ceil(total / LIMIT);
   const subscriberTotalPages = Math.ceil(subscriberTotal / LIMIT);
+
+  // ── Fetch today's delivery summary ───────────────────────────────────────
+  useEffect(() => {
+    void api.get<DeliverySummaryDTO>("/api/v1/admin/deliveries/today").then((r) => {
+      if (r.ok) setDeliverySummary(r.data);
+    });
+  }, []);
 
   // ── Fetch moods ───────────────────────────────────────────────────────────
   const fetchMoods = useCallback(async () => {
@@ -395,12 +418,22 @@ export default function AdminDashboard() {
             </p>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="glass rounded-full px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground transition"
-        >
-          Cerrar sesión
-        </button>
+        <div className="flex items-center gap-4">
+          {deliverySummary && deliverySummary.total > 0 && (
+            <div className="hidden sm:flex items-center gap-3 text-xs">
+              <span className="text-emerald-400">✓ {deliverySummary.sent} enviados hoy</span>
+              {deliverySummary.failed > 0 && (
+                <span className="text-red-400">✕ {deliverySummary.failed} fallidos</span>
+              )}
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="glass rounded-full px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground transition"
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </header>
 
       {/* ── Tabs ────────────────────────────────────────────────────────────── */}
@@ -445,9 +478,16 @@ export default function AdminDashboard() {
                   onChange={(e) => setFilterMood(e.target.value)}
                   className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-foreground focus:outline-none focus:border-crimson/60 transition"
                 >
-                  <option value="">Todos los estados</option>
+                  {/* Native <option> lists render with the OS's own (usually
+                      light) background, so they need an explicit dark
+                      background + light text — inheriting from the <select>
+                      isn't enough and made the closed-but-unselected options
+                      unreadable (light text on a white dropdown). */}
+                  <option value="" className="bg-[#12171a] text-foreground">
+                    Todos los estados
+                  </option>
                   {moods.map((m) => (
-                    <option key={m.name} value={m.name}>
+                    <option key={m.name} value={m.name} className="bg-[#12171a] text-foreground">
                       {m.label}
                     </option>
                   ))}
@@ -716,7 +756,10 @@ export default function AdminDashboard() {
                           {s.active ? "Activo" : "Dado de baja"}
                         </span>
                         <span className="text-[10px] text-muted-foreground/60">
-                          {new Date(s.subscribedAt).toLocaleDateString("es", {
+                          {s.active ? "Desde " : "Baja "}
+                          {new Date(
+                            s.active ? s.subscribedAt : (s.unsubscribedAt ?? s.subscribedAt),
+                          ).toLocaleDateString("es", {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
