@@ -1,64 +1,25 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import samuraiHero from "@/assets/samurai-hero.jpg";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphericBackdrop } from "@/components/AtmosphericBackdrop";
 import { api } from "@/lib/api";
 
-const KANJIS = [
-  {
-    kanji: "癒",
-    title: "Healing",
-    body: "Soft daily messages that meet you where you are — no fixing, no rushing.",
-  },
-  {
-    kanji: "忍",
-    title: "Resilience",
-    body: "Small reflections to remind you of every impossible thing you've already survived.",
-  },
-  {
-    kanji: "望",
-    title: "Hope",
-    body: "A letter to your future self, waiting quietly for the morning you need it most.",
-  },
-  {
-    kanji: "生",
-    title: "Life",
-    body: "You are alive. That alone is already a reason to keep going.",
-  },
-  {
-    kanji: "道",
-    title: "Path",
-    body: "Every path has its shadows. Keep walking — the light always returns.",
-  },
-  {
-    kanji: "魂",
-    title: "Soul",
-    body: "Nothing breaks your soul completely. It bends, it learns, and it rises.",
-  },
-];
+const KANJI_CHARS: Record<string, string> = {
+  healing: "癒",
+  resilience: "忍",
+  hope: "望",
+  life: "生",
+  path: "道",
+  soul: "魂",
+};
 
-const CAROUSEL_QUOTES = [
-  "Even slowly, you are still moving forward.",
-  "The storm will pass. It always does.",
-  "You survived every hard day so far.",
-  "Rest if you must — but do not give up.",
-  "Healing is not linear. It never was.",
-  "Your story is not over yet.",
-  "Small steps still count as progress.",
-  "The pain you feel today will not weigh this much forever.",
-  "You are allowed to take your time.",
-  "Something in you chose to keep going. Honor that.",
-  "You have gotten through 100% of your worst days.",
-  "This is not the end. It is a turning point.",
-  "The version of you that survives this will be extraordinary.",
-  "Breathe. You have made it this far.",
-  "Not all tears are a sign of weakness. Some are proof you still feel.",
-];
+const KANJI_KEYS = ["healing", "resilience", "hope", "life", "path", "soul"] as const;
 
-function QuoteCarousel() {
-  const doubled = [...CAROUSEL_QUOTES, ...CAROUSEL_QUOTES];
+function QuoteCarousel({ quotes }: { quotes: string[] }) {
+  const doubled = [...quotes, ...quotes];
   return (
     <>
       <style>{`
@@ -92,6 +53,9 @@ function QuoteCarousel() {
 }
 
 function SubscribeSection() {
+  const { t, i18n } = useTranslation();
+  const language = i18n.language?.startsWith("es") ? "es" : "en";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -103,6 +67,7 @@ function SubscribeSection() {
     const result = await api.post<{ name: string; email: string }>("/api/v1/subscribe", {
       name,
       email,
+      language,
     });
     // Clear the form either way — on success it's hidden behind the
     // confirmation message anyway; on failure the fields still reset.
@@ -112,7 +77,7 @@ function SubscribeSection() {
       setStatus("success");
     } else {
       setStatus("error");
-      setErrorMsg(result.message ?? "Something went wrong.");
+      setErrorMsg(result.message ?? t("home.subscribe.form.genericError"));
     }
   };
 
@@ -127,12 +92,11 @@ function SubscribeSection() {
           transition={{ duration: 0.9 }}
         >
           <p className="text-[10px] tracking-[0.35em] uppercase text-crimson/70 mb-4">
-            · Daily letter ·
+            {t("home.subscribe.eyebrow")}
           </p>
-          <h2 className="font-display text-4xl mb-4">Receive a daily word.</h2>
+          <h2 className="font-display text-4xl mb-4">{t("home.subscribe.title")}</h2>
           <p className="text-sm text-muted-foreground mb-10 max-w-sm mx-auto leading-relaxed">
-            Every morning, a motivational phrase delivered to your inbox. Just your name and email —
-            nothing else.
+            {t("home.subscribe.subtitle")}
           </p>
 
           {status === "success" ? (
@@ -142,16 +106,16 @@ function SubscribeSection() {
               className="glass rounded-2xl p-10"
             >
               <p className="font-display text-3xl text-crimson mb-3">命</p>
-              <p className="font-display text-xl mb-2">You're in.</p>
+              <p className="font-display text-xl mb-2">{t("home.subscribe.success.title")}</p>
               <p className="text-sm text-muted-foreground">
-                A letter will reach you every morning.
+                {t("home.subscribe.success.subtitle")}
               </p>
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3 text-left">
               <label className="block glass rounded-xl px-4 py-3">
                 <span className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
-                  Name
+                  {t("home.subscribe.form.nameLabel")}
                 </span>
                 <input
                   type="text"
@@ -161,13 +125,13 @@ function SubscribeSection() {
                     setName(e.target.value);
                     setErrorMsg("");
                   }}
-                  placeholder="Your name"
+                  placeholder={t("home.subscribe.form.namePlaceholder")}
                   className="mt-1 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
                 />
               </label>
               <label className="block glass rounded-xl px-4 py-3">
                 <span className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
-                  Email
+                  {t("home.subscribe.form.emailLabel")}
                 </span>
                 <input
                   type="email"
@@ -177,7 +141,7 @@ function SubscribeSection() {
                     setEmail(e.target.value);
                     setErrorMsg("");
                   }}
-                  placeholder="you@quiet.place"
+                  placeholder={t("home.subscribe.form.emailPlaceholder")}
                   className="mt-1 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
                 />
               </label>
@@ -197,7 +161,9 @@ function SubscribeSection() {
                 disabled={status === "loading"}
                 className="w-full rounded-xl bg-(--gradient-crimson) py-3 text-sm font-medium text-primary-foreground glow-crimson hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition"
               >
-                {status === "loading" ? "Subscribing…" : "Receive daily motivation →"}
+                {status === "loading"
+                  ? t("home.subscribe.form.submitLoading")
+                  : t("home.subscribe.form.submitIdle")}
               </button>
             </form>
           )}
@@ -208,6 +174,17 @@ function SubscribeSection() {
 }
 
 export default function Home() {
+  const { t } = useTranslation();
+
+  const kanjis = KANJI_KEYS.map((key) => ({
+    key,
+    kanji: KANJI_CHARS[key],
+    title: t(`home.kanjis.${key}.title`),
+    body: t(`home.kanjis.${key}.body`),
+  }));
+
+  const carouselQuotes = t("home.carousel.quotes", { returnObjects: true }) as string[];
+
   return (
     <div className="relative min-h-screen overflow-hidden text-foreground">
       <Navbar />
@@ -234,7 +211,7 @@ export default function Home() {
             transition={{ duration: 1.2 }}
             className="font-display text-sm tracking-[0.4em] uppercase text-white"
           >
-            命 — Inochi · A quiet companion
+            {t("home.hero.eyebrow")}
           </motion.p>
 
           <motion.h1
@@ -243,7 +220,8 @@ export default function Home() {
             transition={{ duration: 1.4, delay: 0.2 }}
             className="mt-6 font-display text-6xl md:text-8xl leading-[1.05] tracking-tight"
           >
-            Life Goes <span className="text-glow text-crimson">On.</span>
+            {t("home.hero.titleStart")}{" "}
+            <span className="text-glow text-crimson">{t("home.hero.titleAccent")}</span>
           </motion.h1>
 
           <motion.p
@@ -252,9 +230,9 @@ export default function Home() {
             transition={{ duration: 1.4, delay: 0.5 }}
             className="mx-auto mt-8 max-w-xl text-balance text-white md:text-lg leading-relaxed"
           >
-            Even after pain, confusion, heartbreak, or failure…
+            {t("home.hero.subtitleLine1")}
             <br />
-            your story is still moving forward.
+            {t("home.hero.subtitleLine2")}
           </motion.p>
 
           <motion.div
@@ -267,14 +245,14 @@ export default function Home() {
               to="/quotes"
               className="group inline-flex items-center gap-2 rounded-full bg-(--gradient-crimson) px-7 py-3.5 text-sm font-medium text-primary-foreground glow-crimson hover:brightness-110 transition"
             >
-              Find your words
+              {t("home.hero.ctaPrimary")}
               <span className="transition group-hover:translate-x-1">→</span>
             </Link>
             <a
               href="#subscribe"
               className="glass rounded-full px-7 py-3.5 text-sm font-medium hover:bg-white/10 transition"
             >
-              Daily letter
+              {t("home.hero.ctaSecondary")}
             </a>
           </motion.div>
         </div>
@@ -285,7 +263,7 @@ export default function Home() {
           transition={{ delay: 2 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 text-xs tracking-[0.3em] text-muted-foreground"
         >
-          ↓ BREATHE
+          {t("home.hero.scrollHint")}
         </motion.div>
       </section>
 
@@ -293,9 +271,9 @@ export default function Home() {
       <section className="relative py-32 px-4">
         <AtmosphericBackdrop petals={10} />
         <div className="relative z-10 mx-auto max-w-5xl grid md:grid-cols-3 gap-6">
-          {KANJIS.map((c, i) => (
+          {kanjis.map((c, i) => (
             <motion.div
-              key={c.title}
+              key={c.key}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
@@ -321,9 +299,9 @@ export default function Home() {
           transition={{ duration: 1 }}
         >
           <p className="text-center text-[10px] tracking-[0.35em] uppercase text-crimson/70 mb-8">
-            · Words that stay ·
+            {t("home.carousel.eyebrow")}
           </p>
-          <QuoteCarousel />
+          <QuoteCarousel quotes={carouselQuotes} />
         </motion.div>
       </section>
 
@@ -361,11 +339,11 @@ export default function Home() {
             transition={{ duration: 1.6, delay: 0.3 }}
             className="font-display text-3xl md:text-4xl leading-relaxed text-balance"
           >
-            "You do not need to fix your entire life this week.
+            {t("home.signature.line1")}
             <br />
-            You only need to keep moving forward a little.
+            {t("home.signature.line2")}
             <br />
-            <span className="text-crimson text-glow">Even slowly.</span>"
+            <span className="text-crimson text-glow">{t("home.signature.line3Accent")}</span>
           </motion.blockquote>
 
           <motion.p
@@ -375,7 +353,7 @@ export default function Home() {
             transition={{ duration: 1.2, delay: 0.9 }}
             className="mt-8 text-[11px] tracking-[0.4em] uppercase text-muted-foreground/60"
           >
-            命 · Life Goes On
+            {t("home.signature.caption")}
           </motion.p>
 
           <motion.div
@@ -389,7 +367,7 @@ export default function Home() {
       </section>
 
       <footer className="relative z-10 border-t border-white/5 py-10 text-center text-xs text-muted-foreground">
-        Made quietly, for anyone still walking forward. · 命
+        {t("home.footer")}
       </footer>
     </div>
   );

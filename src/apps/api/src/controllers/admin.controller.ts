@@ -28,7 +28,7 @@ const forgotPasswordSchema = z.object({ email: z.string().trim().email() }).stri
 const resetPasswordSchema = z
   .object({
     token: z.string().min(1),
-    password: z.string().min(8, "Token y contraseña (mín. 8 caracteres) son requeridos"),
+    password: z.string().min(8, "Token and password (min. 8 characters) are required"),
   })
   .strict();
 const quoteSchema = z
@@ -100,14 +100,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     typeof password === "string" && (await comparePassword(password, admin?.passwordHash));
 
   if (!admin || !isValidPassword) {
-    res.status(401).json({ success: false, message: "Credenciales inválidas" });
+    res.status(401).json({ success: false, message: "Invalid credentials" });
     return;
   }
 
   await issueRefreshToken(res, admin._id, randomUUID());
   const accessToken = signAccessToken(admin);
 
-  res.status(200).json({ success: true, message: "Sesión iniciada", data: { accessToken } });
+  res.status(200).json({ success: true, message: "Logged in", data: { accessToken } });
 };
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
@@ -158,12 +158,11 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     if (stored) await refreshTokenRepo.revoke(stored._id);
   }
   res.clearCookie(REFRESH_COOKIE_NAME, { path: REFRESH_COOKIE_PATH });
-  res.status(200).json({ success: true, message: "Sesión cerrada" });
+  res.status(200).json({ success: true, message: "Logged out" });
 };
 
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
-  const GENERIC_MESSAGE =
-    "Si el correo es válido, recibirás un enlace para restablecer tu contraseña.";
+  const GENERIC_MESSAGE = "If that email is valid, you'll receive a password reset link.";
   const parsed = forgotPasswordSchema.safeParse(req.body);
 
   if (parsed.success) {
@@ -191,7 +190,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     res.status(400).json({
       success: false,
       message:
-        parsed.error.errors[0]?.message ?? "Token y contraseña (mín. 8 caracteres) son requeridos",
+        parsed.error.errors[0]?.message ?? "Token and password (min. 8 characters) are required",
     });
     return;
   }
@@ -199,7 +198,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
   const admin = await adminRepo.findByValidResetToken(hashToken(token));
   if (!admin) {
-    res.status(400).json({ success: false, message: "El enlace es inválido o ha expirado" });
+    res.status(400).json({ success: false, message: "The link is invalid or has expired" });
     return;
   }
 
@@ -209,9 +208,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
   // access tokens once the password that guarded them has changed.
   await refreshTokenRepo.revokeAllForAdmin(admin._id);
 
-  res
-    .status(200)
-    .json({ success: true, message: "Contraseña actualizada. Ya puedes iniciar sesión." });
+  res.status(200).json({ success: true, message: "Password updated. You can now log in." });
 };
 
 // ── Quotes CRUD ───────────────────────────────────────────────────────────────
@@ -244,7 +241,7 @@ export const getQuotes = async (req: Request, res: Response): Promise<void> => {
 export const createQuote = async (req: Request, res: Response): Promise<void> => {
   const parsed = quoteSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ success: false, message: "text y moods son requeridos" });
+    res.status(400).json({ success: false, message: "text and moods are required" });
     return;
   }
   const quote = await QuoteModel.create(parsed.data);
@@ -255,7 +252,7 @@ export const updateQuote = async (req: Request, res: Response): Promise<void> =>
   const { id } = req.params;
   const parsed = quoteSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ success: false, message: "text y moods son requeridos" });
+    res.status(400).json({ success: false, message: "text and moods are required" });
     return;
   }
   const quote = await QuoteModel.findByIdAndUpdate(id, parsed.data, {
@@ -263,7 +260,7 @@ export const updateQuote = async (req: Request, res: Response): Promise<void> =>
     runValidators: true,
   }).lean();
   if (!quote) {
-    res.status(404).json({ success: false, message: "Frase no encontrada" });
+    res.status(404).json({ success: false, message: "Quote not found" });
     return;
   }
   res.status(200).json({ success: true, data: { quote: toQuoteDTO(quote) } });
@@ -273,10 +270,10 @@ export const deleteQuote = async (req: Request, res: Response): Promise<void> =>
   const { id } = req.params;
   const quote = await QuoteModel.findByIdAndDelete(id).lean();
   if (!quote) {
-    res.status(404).json({ success: false, message: "Frase no encontrada" });
+    res.status(404).json({ success: false, message: "Quote not found" });
     return;
   }
-  res.status(200).json({ success: true, message: "Frase eliminada" });
+  res.status(200).json({ success: true, message: "Quote deleted" });
 };
 
 // ── Moods CRUD ────────────────────────────────────────────────────────────────
@@ -291,7 +288,7 @@ const toLabelName = (label: string): string =>
 export const createMood = async (req: Request, res: Response): Promise<void> => {
   const parsed = createMoodSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ success: false, message: "label es requerido" });
+    res.status(400).json({ success: false, message: "label is required" });
     return;
   }
   const { label, name: rawName } = parsed.data;
@@ -306,7 +303,7 @@ export const updateMood = async (req: Request, res: Response): Promise<void> => 
   const { id } = req.params;
   const parsed = updateMoodSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ success: false, message: "label es requerido" });
+    res.status(400).json({ success: false, message: "label is required" });
     return;
   }
   const mood = await MoodModel.findByIdAndUpdate(id, parsed.data, {
@@ -314,7 +311,7 @@ export const updateMood = async (req: Request, res: Response): Promise<void> => 
     runValidators: true,
   }).lean();
   if (!mood) {
-    res.status(404).json({ success: false, message: "Estado no encontrado" });
+    res.status(404).json({ success: false, message: "Mood not found" });
     return;
   }
   res.status(200).json({ success: true, data: { mood: toMoodDTO(mood) } });
@@ -324,8 +321,8 @@ export const deleteMood = async (req: Request, res: Response): Promise<void> => 
   const { id } = req.params;
   const mood = await MoodModel.findByIdAndDelete(id).lean();
   if (!mood) {
-    res.status(404).json({ success: false, message: "Estado no encontrado" });
+    res.status(404).json({ success: false, message: "Mood not found" });
     return;
   }
-  res.status(200).json({ success: true, message: "Estado eliminado" });
+  res.status(200).json({ success: true, message: "Mood deleted" });
 };

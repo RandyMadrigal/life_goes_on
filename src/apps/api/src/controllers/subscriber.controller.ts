@@ -12,6 +12,7 @@ const subscribeSchema = z
   .object({
     name: z.string().trim().min(1, "Name is required").max(80, "Name is too long"),
     email: z.string().trim().min(1, "Email is required").email("Invalid email address").max(254),
+    language: z.enum(["es", "en"]).optional().default("en"),
   })
   .strict();
 
@@ -24,7 +25,7 @@ export const subscribe = asyncHandler(async (req: Request, res: Response): Promi
     });
     return;
   }
-  const { name, email } = parsed.data;
+  const { name, email, language } = parsed.data;
   const normalizedEmail = email.toLowerCase();
 
   const existing = await subscriberRepo.findByEmail(normalizedEmail);
@@ -33,7 +34,7 @@ export const subscribe = asyncHandler(async (req: Request, res: Response): Promi
     return;
   }
 
-  const subscriber = await subscriberRepo.create(name, normalizedEmail);
+  const subscriber = await subscriberRepo.create(name, normalizedEmail, language);
   res.status(201).json(
     ApiResponse.ok("Subscribed successfully.", {
       name: subscriber.name,

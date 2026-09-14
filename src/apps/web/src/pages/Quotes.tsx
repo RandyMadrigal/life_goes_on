@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { QuoteDTO as Quote, MoodDTO as Mood } from "life-goes-on-shared";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphericBackdrop } from "@/components/AtmosphericBackdrop";
@@ -9,6 +10,9 @@ import { api } from "@/lib/api";
 const PAGE_SIZE = 2;
 
 export default function Quotes() {
+  const { t, i18n } = useTranslation();
+  const language = i18n.language?.startsWith("es") ? "es" : "en";
+
   const [moods, setMoods] = useState<Mood[]>([]);
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -17,11 +21,19 @@ export default function Quotes() {
   const [moodsLoading, setMoodsLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ moods: Mood[] }>("/api/v1/moods").then((result) => {
-      if (result.ok) setMoods(result.data.moods);
-      setMoodsLoading(false);
-    });
-  }, []);
+    // Language changed (or first load) — clear any stale-language mood/quote
+    // selection and refetch the mood list for the current language.
+    setSelectedMood(null);
+    setQuotes([]);
+    setPage(0);
+    setMoodsLoading(true);
+    api
+      .get<{ moods: Mood[] }>(`/api/v1/moods?language=${encodeURIComponent(language)}`)
+      .then((result) => {
+        if (result.ok) setMoods(result.data.moods);
+        setMoodsLoading(false);
+      });
+  }, [language]);
 
   const totalPages = Math.ceil(quotes.length / PAGE_SIZE);
   const visible = quotes.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
@@ -30,7 +42,7 @@ export default function Quotes() {
     setLoading(true);
     setPage(0);
     const result = await api.get<{ quotes: Quote[] }>(
-      `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=12`,
+      `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=12&language=${encodeURIComponent(language)}`,
     );
     if (result.ok) setQuotes(result.data.quotes);
     setLoading(false);
@@ -54,12 +66,10 @@ export default function Quotes() {
           transition={{ duration: 1 }}
         >
           <p className="text-[10px] tracking-[0.35em] uppercase text-crimson/70">
-            命 · Words for your moment
+            {t("quotes.eyebrow")}
           </p>
-          <h1 className="mt-3 font-display text-5xl md:text-6xl">How are you feeling?</h1>
-          <p className="mt-3 text-sm text-muted-foreground max-w-md">
-            Choose what matches your state. The right words will find you.
-          </p>
+          <h1 className="mt-3 font-display text-5xl md:text-6xl">{t("quotes.title")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground max-w-md">{t("quotes.subtitle")}</p>
         </motion.div>
 
         {/* Mood selector */}
@@ -146,11 +156,11 @@ export default function Quotes() {
               disabled={page === 0}
               className="glass rounded-full px-5 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
-              ← Prev
+              {t("quotes.pagination.prev")}
             </button>
 
             <span className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
-              {page + 1} / {totalPages}
+              {t("quotes.pagination.pageOf", { current: page + 1, total: totalPages })}
             </span>
 
             <button
@@ -158,7 +168,7 @@ export default function Quotes() {
               disabled={page === totalPages - 1}
               className="glass rounded-full px-5 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
-              Next →
+              {t("quotes.pagination.next")}
             </button>
           </motion.div>
         )}
@@ -171,13 +181,13 @@ export default function Quotes() {
             className="mt-16 text-center"
           >
             <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground mb-6">
-              命 · Words that meet you where you are
+              {t("quotes.emptyState.eyebrow")}
             </p>
             <Link
               to="/#subscribe"
               className="text-sm text-muted-foreground hover:text-foreground transition underline underline-offset-4"
             >
-              Want them in your inbox every morning? Subscribe →
+              {t("quotes.emptyState.cta")}
             </Link>
           </motion.div>
         )}

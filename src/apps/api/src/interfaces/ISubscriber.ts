@@ -8,4 +8,5 @@ export interface ISubscriber extends Document {
   subscribedAt: Date;
   unsubscribedAt?: Date | null;
   unsubscribeTokenHash: string;
+  language: "es" | "en";
 }

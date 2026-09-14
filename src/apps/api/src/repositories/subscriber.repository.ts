@@ -10,9 +10,9 @@ export class SubscriberRepository implements ISubscriberRepository {
     return SubscriberModel.findOne({ email }).exec();
   }
 
-  async create(name: string, email: string): Promise<ISubscriber> {
+  async create(name: string, email: string, language: "es" | "en"): Promise<ISubscriber> {
     const unsubscribeTokenHash = hashToken(randomBytes(32).toString("hex"));
-    return SubscriberModel.create({ name, email, unsubscribeTokenHash });
+    return SubscriberModel.create({ name, email, unsubscribeTokenHash, language });
   }
 
   async findAllActive(): Promise<ISubscriber[]> {

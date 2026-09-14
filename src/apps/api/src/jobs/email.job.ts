@@ -46,7 +46,7 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
         return;
       }
 
-      const [quote] = await quoteRepo.findMany(undefined, 1);
+      const [quote] = await quoteRepo.findMany(undefined, 1, sub.language);
       if (!quote) throw new Error("No quotes in database");
 
       // Fresh token per send: the same subscriber gets a new unsubscribe

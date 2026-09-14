@@ -5,4 +5,6 @@ export interface IMood extends Document {
   name: string;
   label: string;
   order: number;
+  language: "es" | "en";
+  pairId?: Types.ObjectId;
 }

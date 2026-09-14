@@ -9,6 +9,7 @@ const subscriberSchema = new Schema<ISubscriber>(
     subscribedAt: { type: Date, default: Date.now },
     unsubscribedAt: { type: Date, default: null },
     unsubscribeTokenHash: { type: String, unique: true, sparse: true },
+    language: { type: String, enum: ["es", "en"], required: true, default: "en" },
   },
   { timestamps: false },
 );
