@@ -1,10 +1,16 @@
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { randomBytes, createHash } from "crypto";
 import { QuoteModel } from "../models/quote.model";
 import { MoodModel } from "../models/mood.model";
 import { env } from "../config/env";
 import { toQuoteDTO, toMoodDTO } from "../utils/dto.mappers";
+import { AdminRepository } from "../repositories/admin.repository";
+import { EmailService } from "../services/email.service";
+
+const adminRepo = new AdminRepository();
+const emailService = new EmailService();
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -14,18 +20,27 @@ const COOKIE_OPTS = {
   maxAge: 8 * 60 * 60 * 1000, // 8h
 };
 
+// A syntactically valid bcrypt hash that matches no real password. Used so a
+// lookup miss still runs bcrypt.compare, keeping the response time the same
+// whether or not the email exists (avoids a timing side-channel).
+const DUMMY_HASH = "$2b$12$1dL5EUBimmngb79kE6dweOdSOG8SRmWArz5ZegwLGpa4qBAHo6k62";
+
+const hashToken = (token: string): string => createHash("sha256").update(token).digest("hex");
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1h
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body as { email?: string; password?: string };
 
-  const isValidEmail = typeof email === "string" && email === env.ADMIN_EMAIL;
-  // Always run bcrypt.compare (even with a placeholder) so a wrong email doesn't
-  // short-circuit before the password check, which would leak email validity via timing.
+  const admin =
+    typeof email === "string" ? await adminRepo.findByEmail(email.toLowerCase().trim()) : null;
   const isValidPassword =
-    typeof password === "string" && (await bcrypt.compare(password, env.ADMIN_PASSWORD_HASH));
+    typeof password === "string" &&
+    (await bcrypt.compare(password, admin?.passwordHash ?? DUMMY_HASH));
 
-  if (!isValidEmail || !isValidPassword) {
+  if (!admin || !isValidPassword) {
     res.status(401).json({ success: false, message: "Credenciales inválidas" });
     return;
   }
@@ -38,6 +53,54 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const logout = async (_req: Request, res: Response): Promise<void> => {
   res.clearCookie("admin_token");
   res.status(200).json({ success: true, message: "Sesión cerrada" });
+};
+
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  const { email } = req.body as { email?: string };
+  const GENERIC_MESSAGE =
+    "Si el correo es válido, recibirás un enlace para restablecer tu contraseña.";
+
+  if (typeof email === "string" && email.trim()) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const admin = await adminRepo.findByEmail(normalizedEmail);
+
+    if (admin) {
+      const token = randomBytes(32).toString("hex");
+      const expires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+      await adminRepo.setResetToken(normalizedEmail, hashToken(token), expires);
+
+      const resetUrl = `${env.FRONTEND_URL}/admin/reset-password?token=${token}`;
+      await emailService.sendPasswordReset(admin.email, resetUrl);
+    }
+  }
+
+  // Always the same response, whether or not the email matched — otherwise
+  // the endpoint becomes a way to confirm the admin's email address.
+  res.status(200).json({ success: true, message: GENERIC_MESSAGE });
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  const { token, password } = req.body as { token?: string; password?: string };
+
+  if (!token || !password || password.length < 8) {
+    res
+      .status(400)
+      .json({ success: false, message: "Token y contraseña (mín. 8 caracteres) son requeridos" });
+    return;
+  }
+
+  const admin = await adminRepo.findByValidResetToken(hashToken(token));
+  if (!admin) {
+    res.status(400).json({ success: false, message: "El enlace es inválido o ha expirado" });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
+  await adminRepo.updatePasswordAndClearToken(admin._id.toString(), passwordHash);
+
+  res
+    .status(200)
+    .json({ success: true, message: "Contraseña actualizada. Ya puedes iniciar sesión." });
 };
 
 // ── Quotes CRUD ───────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "../config/env";
 import type { IEmailService } from "./interfaces/IEmailService";
 import { motivationalTemplate } from "./templates/motivational.template";
+import { resetPasswordTemplate } from "./templates/resetPassword.template";
 
 const TIMEOUT_MS = 10_000;
 
@@ -69,6 +70,14 @@ export class EmailService implements IEmailService {
       to,
       "A message for you — Life Goes On 命",
       motivationalTemplate(name, message, unsubscribeUrl),
+    );
+  }
+
+  async sendPasswordReset(to: string, resetUrl: string): Promise<void> {
+    await this.send(
+      to,
+      "Reset your admin password — Life Goes On",
+      resetPasswordTemplate(resetUrl),
     );
   }
 }

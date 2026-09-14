@@ -4,9 +4,11 @@ import { connectDatabase } from "./config/database";
 import createApp from "./config/app";
 import { scheduleMotivationalEmails } from "./jobs/email.job";
 import { EmailService } from "./services/email.service";
+import { AdminRepository } from "./repositories/admin.repository";
 
 const start = async (): Promise<void> => {
   await connectDatabase();
+  await new AdminRepository().ensureBootstrapped(env.ADMIN_EMAIL, env.ADMIN_PASSWORD_HASH);
 
   const app = createApp();
 

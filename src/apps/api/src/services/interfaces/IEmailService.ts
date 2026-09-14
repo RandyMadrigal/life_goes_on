@@ -7,4 +7,5 @@ export interface IEmailService {
     message: string,
     unsubscribeUrl: string,
   ): Promise<void>;
+  sendPasswordReset(to: string, resetUrl: string): Promise<void>;
 }

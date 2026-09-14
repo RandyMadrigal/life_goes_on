@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
 
@@ -79,6 +79,15 @@ export default function AdminLogin() {
           >
             {loading ? "Entrando..." : "Iniciar sesión"}
           </button>
+
+          <p className="text-center">
+            <Link
+              to="/admin/forgot-password"
+              className="text-xs text-muted-foreground hover:text-foreground transition underline underline-offset-4"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
         </form>
       </motion.div>
     </div>
