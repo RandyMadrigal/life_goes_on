@@ -13,7 +13,6 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@sendgrid/mail": "^8.1.4",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -26,6 +25,7 @@
     "life-goes-on-shared": "*",
     "mongoose": "^8.14.0",
     "node-cron": "^4.2.1",
+    "nodemailer": "^10.0.9",
     "zod": "^3.24.2"
   },
   "devDependencies": {

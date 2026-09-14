@@ -12,7 +12,17 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   COOKIE_SECRET: z.string().min(32, "COOKIE_SECRET must be at least 32 chars"),
-  SENDGRID_API_KEY: z.string().default(""),
+  SMTP_HOST: z.string().default("smtp.gmail.com"),
+  SMTP_PORT: z
+    .string()
+    .default("465")
+    .transform((v) => parseInt(v, 10)),
+  SMTP_SECURE: z
+    .string()
+    .default("true")
+    .transform((v) => v === "true"),
+  SMTP_USER: z.string().default(""),
+  SMTP_PASS: z.string().default(""),
   FROM_EMAIL: z.string().email().default("noreply@lifegoeson.app"),
   FRONTEND_URL: z.string().url().default("http://localhost:5173"),
   API_BASE_URL: z.string().url().default("http://localhost:3001"),
