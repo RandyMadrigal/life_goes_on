@@ -7,6 +7,7 @@ import type {
   AdminSubscriberDTO as Subscriber,
 } from "life-goes-on-shared";
 import { api } from "@/lib/api";
+import { setAccessToken } from "@/lib/authToken";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -331,6 +332,7 @@ export default function AdminDashboard() {
   // ── Logout ────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     await api.post("/api/v1/admin/logout", {});
+    setAccessToken(null);
     navigate("/admin/login");
   };
 

@@ -3,7 +3,9 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 
 export const adminAuth = (req: Request, res: Response, next: NextFunction): void => {
-  const token = req.signedCookies?.admin_token as string | undefined;
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
+
   if (!token) {
     res.status(401).json({ success: false, message: "Unauthorized" });
     return;

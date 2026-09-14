@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
+import { setAccessToken } from "@/lib/authToken";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -14,9 +15,13 @@ export default function AdminLogin() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await api.post<{ message: string }>("/api/v1/admin/login", { email, password });
+    const result = await api.post<{ accessToken: string }>("/api/v1/admin/login", {
+      email,
+      password,
+    });
     setLoading(false);
     if (result.ok) {
+      setAccessToken(result.data.accessToken);
       navigate("/admin");
     } else {
       setError(result.message);

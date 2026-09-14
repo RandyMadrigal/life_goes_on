@@ -7,6 +7,10 @@ export class AdminRepository implements IAdminRepository {
     return AdminModel.findOne({ email }).exec();
   }
 
+  async findById(id: string): Promise<IAdmin | null> {
+    return AdminModel.findById(id).exec();
+  }
+
   async ensureBootstrapped(email: string, passwordHash: string): Promise<void> {
     const existing = await AdminModel.countDocuments();
     if (existing === 0) {

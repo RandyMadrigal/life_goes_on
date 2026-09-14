@@ -4,6 +4,7 @@ import { adminAuth } from "../middlewares/adminAuth.middleware";
 import { authLimiter, forgotPasswordLimiter } from "../middlewares/rateLimiter.middleware";
 import {
   login,
+  refresh,
   logout,
   forgotPassword,
   resetPassword,
@@ -19,14 +20,17 @@ import { getSubscribers } from "../controllers/subscriber.controller";
 
 const router = Router();
 
-// Public
+// Public — these authenticate via the refresh cookie itself (or nothing at
+// all), so they must not sit behind adminAuth's Bearer check. In particular,
+// logout has to work even when the access token has already expired.
 router.post("/login", authLimiter, asyncHandler(login));
+router.post("/refresh", authLimiter, asyncHandler(refresh));
+router.post("/logout", asyncHandler(logout));
 router.post("/forgot-password", forgotPasswordLimiter, asyncHandler(forgotPassword));
 router.post("/reset-password", forgotPasswordLimiter, asyncHandler(resetPassword));
 
 // Protected
 router.use(adminAuth);
-router.post("/logout", asyncHandler(logout));
 router.get("/quotes", asyncHandler(getQuotes));
 router.post("/quotes", asyncHandler(createQuote));
 router.put("/quotes/:id", asyncHandler(updateQuote));
