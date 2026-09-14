@@ -1,4 +1,8 @@
-export const motivationalTemplate = (name: string, message: string, unsubscribeUrl: string): string => `
+export const motivationalTemplate = (
+  name: string,
+  message: string,
+  unsubscribeUrl: string,
+): string => `
 <!DOCTYPE html>
 <html lang="en">
 <head>

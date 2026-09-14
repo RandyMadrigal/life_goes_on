@@ -5,10 +5,10 @@ import { api } from "@/lib/api";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [email, setEmail]       = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -36,7 +36,9 @@ export default function AdminLogin() {
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-(--gradient-crimson) glow-crimson text-2xl font-display">
             命
           </span>
-          <p className="mt-3 text-xs tracking-[0.3em] uppercase text-muted-foreground">Admin · Life Goes On</p>
+          <p className="mt-3 text-xs tracking-[0.3em] uppercase text-muted-foreground">
+            Admin · Life Goes On
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="glass rounded-2xl p-8 space-y-5">
@@ -54,7 +56,9 @@ export default function AdminLogin() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground uppercase tracking-widest">Contraseña</label>
+            <label className="text-xs text-muted-foreground uppercase tracking-widest">
+              Contraseña
+            </label>
             <input
               type="password"
               value={password}
@@ -66,9 +70,7 @@ export default function AdminLogin() {
             />
           </div>
 
-          {error && (
-            <p className="text-xs text-red-400">{error}</p>
-          )}
+          {error && <p className="text-xs text-red-400">{error}</p>}
 
           <button
             type="submit"

@@ -3,12 +3,7 @@ export class ApiError extends Error {
   public readonly isOperational: boolean;
   public readonly errors?: unknown[];
 
-  constructor(
-    statusCode: number,
-    message: string,
-    errors?: unknown[],
-    isOperational = true,
-  ) {
+  constructor(statusCode: number, message: string, errors?: unknown[], isOperational = true) {
     super(message);
     Object.setPrototypeOf(this, new.target.prototype);
     this.name = "ApiError";

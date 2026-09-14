@@ -1,22 +1,10 @@
 import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import type { QuoteDTO as Quote, MoodDTO as Mood } from "life-goes-on-shared";
 import { api } from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface Quote {
-  _id: string;
-  text: string;
-  moods: string[];
-}
-
-interface Mood {
-  _id: string;
-  name: string;
-  label: string;
-  order: number;
-}
 
 interface QuotesResponse {
   quotes: Quote[];
@@ -30,7 +18,11 @@ const LIMIT = 20;
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const toLabelName = (label: string) =>
-  label.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join("");
+  label
+    .trim()
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join("");
 
 // ── QuoteForm ──────────────────────────────────────────────────────────────────
 
@@ -45,13 +37,13 @@ function QuoteForm({
   onSave: (q: Quote) => void;
   onCancel: () => void;
 }) {
-  const [text, setText]         = useState(initial?.text ?? "");
+  const [text, setText] = useState(initial?.text ?? "");
   const [selected, setSelected] = useState<string[]>(initial?.moods ?? []);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const toggle = (name: string) =>
-    setSelected((prev) => prev.includes(name) ? prev.filter((m) => m !== name) : [...prev, name]);
+    setSelected((prev) => (prev.includes(name) ? prev.filter((m) => m !== name) : [...prev, name]));
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -62,7 +54,10 @@ function QuoteForm({
     setLoading(true);
     setError("");
     const result = initial
-      ? await api.put<{ quote: Quote }>(`/api/v1/admin/quotes/${initial._id}`, { text, moods: selected })
+      ? await api.put<{ quote: Quote }>(`/api/v1/admin/quotes/${initial._id}`, {
+          text,
+          moods: selected,
+        })
       : await api.post<{ quote: Quote }>("/api/v1/admin/quotes", { text, moods: selected });
     setLoading(false);
     if (result.ok) onSave(result.data.quote);
@@ -123,7 +118,11 @@ function QuoteForm({
         >
           {loading ? "Guardando..." : "Guardar"}
         </button>
-        <button type="button" onClick={onCancel} className="glass rounded-lg px-5 py-2 text-sm text-muted-foreground hover:text-foreground transition">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="glass rounded-lg px-5 py-2 text-sm text-muted-foreground hover:text-foreground transition"
+        >
           Cancelar
         </button>
       </div>
@@ -142,15 +141,18 @@ function MoodForm({
   onSave: (m: Mood) => void;
   onCancel: () => void;
 }) {
-  const [label, setLabel]   = useState(initial?.label ?? "");
+  const [label, setLabel] = useState(initial?.label ?? "");
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState("");
+  const [error, setError] = useState("");
 
   const preview = initial ? initial.name : toLabelName(label);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!label.trim()) { setError("El nombre visible es requerido."); return; }
+    if (!label.trim()) {
+      setError("El nombre visible es requerido.");
+      return;
+    }
     setLoading(true);
     setError("");
     const result = initial
@@ -173,7 +175,9 @@ function MoodForm({
       <h3 className="text-sm font-medium">{initial ? "Editar estado" : "Nuevo estado de ánimo"}</h3>
 
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground uppercase tracking-widest">Nombre visible</label>
+        <label className="text-xs text-muted-foreground uppercase tracking-widest">
+          Nombre visible
+        </label>
         <input
           type="text"
           value={label}
@@ -199,7 +203,11 @@ function MoodForm({
         >
           {loading ? "Guardando..." : "Guardar"}
         </button>
-        <button type="button" onClick={onCancel} className="glass rounded-lg px-5 py-2 text-sm text-muted-foreground hover:text-foreground transition">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="glass rounded-lg px-5 py-2 text-sm text-muted-foreground hover:text-foreground transition"
+        >
           Cancelar
         </button>
       </div>
@@ -216,22 +224,22 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>("quotes");
 
   // ── Quotes state ──────────────────────────────────────────────────────────
-  const [quotes, setQuotes]         = useState<Quote[]>([]);
-  const [total, setTotal]           = useState(0);
-  const [page, setPage]             = useState(1);
-  const [search, setSearch]         = useState("");
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
   const [filterMood, setFilterMood] = useState("");
   const [quotesLoading, setQuotesLoading] = useState(true);
-  const [editingQuote, setEditingQuote]   = useState<Quote | null>(null);
-  const [showAddQuote, setShowAddQuote]   = useState(false);
+  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
+  const [showAddQuote, setShowAddQuote] = useState(false);
   const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null);
   const [deletingQuote, setDeletingQuote] = useState(false);
 
   // ── Moods state ───────────────────────────────────────────────────────────
-  const [moods, setMoods]               = useState<Mood[]>([]);
+  const [moods, setMoods] = useState<Mood[]>([]);
   const [moodsLoading, setMoodsLoading] = useState(true);
-  const [editingMood, setEditingMood]   = useState<Mood | null>(null);
-  const [showAddMood, setShowAddMood]   = useState(false);
+  const [editingMood, setEditingMood] = useState<Mood | null>(null);
+  const [showAddMood, setShowAddMood] = useState(false);
   const [deleteMoodId, setDeleteMoodId] = useState<string | null>(null);
   const [deletingMood, setDeletingMood] = useState(false);
 
@@ -246,23 +254,35 @@ export default function AdminDashboard() {
     else if (r.message === "Unauthorized") navigate("/admin/login");
   }, [navigate]);
 
-  useEffect(() => { void fetchMoods(); }, [fetchMoods]);
+  useEffect(() => {
+    void fetchMoods();
+  }, [fetchMoods]);
 
   // ── Fetch quotes ──────────────────────────────────────────────────────────
-  const fetchQuotes = useCallback(async (p = page) => {
-    setQuotesLoading(true);
-    const params = new URLSearchParams({ page: String(p), limit: String(LIMIT) });
-    if (filterMood) params.set("mood", filterMood);
-    if (search)     params.set("search", search);
-    const result = await api.get<QuotesResponse>(`/api/v1/admin/quotes?${params}`);
-    setQuotesLoading(false);
-    if (!result.ok) { if (result.message === "Unauthorized") navigate("/admin/login"); return; }
-    setQuotes(result.data.quotes);
-    setTotal(result.data.total);
-  }, [page, filterMood, search, navigate]);
+  const fetchQuotes = useCallback(
+    async (p = page) => {
+      setQuotesLoading(true);
+      const params = new URLSearchParams({ page: String(p), limit: String(LIMIT) });
+      if (filterMood) params.set("mood", filterMood);
+      if (search) params.set("search", search);
+      const result = await api.get<QuotesResponse>(`/api/v1/admin/quotes?${params}`);
+      setQuotesLoading(false);
+      if (!result.ok) {
+        if (result.message === "Unauthorized") navigate("/admin/login");
+        return;
+      }
+      setQuotes(result.data.quotes);
+      setTotal(result.data.total);
+    },
+    [page, filterMood, search, navigate],
+  );
 
-  useEffect(() => { void fetchQuotes(page); }, [fetchQuotes, page]);
-  useEffect(() => { setPage(1); }, [filterMood, search]);
+  useEffect(() => {
+    void fetchQuotes(page);
+  }, [fetchQuotes, page]);
+  useEffect(() => {
+    setPage(1);
+  }, [filterMood, search]);
 
   // ── Logout ────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
@@ -277,12 +297,15 @@ export default function AdminDashboard() {
     const r = await api.delete(`/api/v1/admin/quotes/${deleteQuoteId}`);
     setDeletingQuote(false);
     setDeleteQuoteId(null);
-    if (r.ok) { setQuotes((p) => p.filter((q) => q._id !== deleteQuoteId)); setTotal((t) => t - 1); }
+    if (r.ok) {
+      setQuotes((p) => p.filter((q) => q._id !== deleteQuoteId));
+      setTotal((t) => t - 1);
+    }
   };
 
   const handleQuoteSaved = (updated: Quote) => {
     if (editingQuote) {
-      setQuotes((p) => p.map((q) => q._id === updated._id ? updated : q));
+      setQuotes((p) => p.map((q) => (q._id === updated._id ? updated : q)));
       setEditingQuote(null);
     } else {
       setShowAddQuote(false);
@@ -303,7 +326,7 @@ export default function AdminDashboard() {
 
   const handleMoodSaved = (saved: Mood) => {
     if (editingMood) {
-      setMoods((p) => p.map((m) => m._id === saved._id ? saved : m));
+      setMoods((p) => p.map((m) => (m._id === saved._id ? saved : m)));
       setEditingMood(null);
     } else {
       setMoods((p) => [...p, saved].sort((a, b) => a.order - b.order));
@@ -316,13 +339,20 @@ export default function AdminDashboard() {
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-(--gradient-crimson) text-base font-display">命</span>
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-(--gradient-crimson) text-base font-display">
+            命
+          </span>
           <div>
             <p className="text-sm font-medium text-foreground">Life Goes On — Admin</p>
-            <p className="text-xs text-muted-foreground">{total} frases · {moods.length} estados</p>
+            <p className="text-xs text-muted-foreground">
+              {total} frases · {moods.length} estados
+            </p>
           </div>
         </div>
-        <button onClick={handleLogout} className="glass rounded-full px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground transition">
+        <button
+          onClick={handleLogout}
+          className="glass rounded-full px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground transition"
+        >
           Cerrar sesión
         </button>
       </header>
@@ -346,11 +376,15 @@ export default function AdminDashboard() {
 
       <div className="mx-auto max-w-4xl px-4 py-8">
         <AnimatePresence mode="wait">
-
           {/* ══ QUOTES TAB ══════════════════════════════════════════════════ */}
           {tab === "quotes" && (
-            <motion.div key="quotes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-
+            <motion.div
+              key="quotes"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
               {/* Controls */}
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
                 <input
@@ -366,10 +400,17 @@ export default function AdminDashboard() {
                   className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-foreground focus:outline-none focus:border-crimson/60 transition"
                 >
                   <option value="">Todos los estados</option>
-                  {moods.map((m) => <option key={m.name} value={m.name}>{m.label}</option>)}
+                  {moods.map((m) => (
+                    <option key={m.name} value={m.name}>
+                      {m.label}
+                    </option>
+                  ))}
                 </select>
                 <button
-                  onClick={() => { setShowAddQuote(true); setEditingQuote(null); }}
+                  onClick={() => {
+                    setShowAddQuote(true);
+                    setEditingQuote(null);
+                  }}
                   className="rounded-lg bg-(--gradient-crimson) px-5 py-2 text-sm font-medium text-primary-foreground hover:brightness-110 transition whitespace-nowrap"
                 >
                   + Nueva frase
@@ -384,7 +425,10 @@ export default function AdminDashboard() {
                     initial={editingQuote ?? undefined}
                     moods={moods}
                     onSave={handleQuoteSaved}
-                    onCancel={() => { setShowAddQuote(false); setEditingQuote(null); }}
+                    onCancel={() => {
+                      setShowAddQuote(false);
+                      setEditingQuote(null);
+                    }}
                   />
                 )}
               </AnimatePresence>
@@ -400,7 +444,9 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               ) : quotes.length === 0 ? (
-                <div className="text-center py-20 text-muted-foreground text-sm">No se encontraron frases.</div>
+                <div className="text-center py-20 text-muted-foreground text-sm">
+                  No se encontraron frases.
+                </div>
               ) : (
                 <div className="space-y-3">
                   {quotes.map((q) => (
@@ -418,13 +464,35 @@ export default function AdminDashboard() {
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex flex-wrap gap-1">
                           {q.moods.slice(0, 4).map((m) => (
-                            <span key={m} className="text-[10px] rounded-full px-2 py-0.5 bg-white/8 text-muted-foreground">{m}</span>
+                            <span
+                              key={m}
+                              className="text-[10px] rounded-full px-2 py-0.5 bg-white/8 text-muted-foreground"
+                            >
+                              {m}
+                            </span>
                           ))}
-                          {q.moods.length > 4 && <span className="text-[10px] text-muted-foreground">+{q.moods.length - 4}</span>}
+                          {q.moods.length > 4 && (
+                            <span className="text-[10px] text-muted-foreground">
+                              +{q.moods.length - 4}
+                            </span>
+                          )}
                         </div>
                         <div className="flex gap-2 shrink-0">
-                          <button onClick={() => { setEditingQuote(q); setShowAddQuote(false); }} className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 glass rounded-lg">Editar</button>
-                          <button onClick={() => setDeleteQuoteId(q._id)} className="text-xs text-red-400/70 hover:text-red-400 transition px-2 py-1 glass rounded-lg">Borrar</button>
+                          <button
+                            onClick={() => {
+                              setEditingQuote(q);
+                              setShowAddQuote(false);
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 glass rounded-lg"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => setDeleteQuoteId(q._id)}
+                            className="text-xs text-red-400/70 hover:text-red-400 transition px-2 py-1 glass rounded-lg"
+                          >
+                            Borrar
+                          </button>
                         </div>
                       </div>
                     </motion.div>
@@ -435,9 +503,23 @@ export default function AdminDashboard() {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="mt-8 flex items-center justify-center gap-4">
-                  <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="glass rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition">← Anterior</button>
-                  <span className="text-xs text-muted-foreground">{page} / {totalPages}</span>
-                  <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="glass rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition">Siguiente →</button>
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="glass rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    ← Anterior
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    {page} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="glass rounded-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    Siguiente →
+                  </button>
                 </div>
               )}
             </motion.div>
@@ -445,12 +527,20 @@ export default function AdminDashboard() {
 
           {/* ══ MOODS TAB ═══════════════════════════════════════════════════ */}
           {tab === "moods" && (
-            <motion.div key="moods" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-
+            <motion.div
+              key="moods"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
               <div className="flex justify-between items-center mb-6">
                 <p className="text-xs text-muted-foreground">{moods.length} estados de ánimo</p>
                 <button
-                  onClick={() => { setShowAddMood(true); setEditingMood(null); }}
+                  onClick={() => {
+                    setShowAddMood(true);
+                    setEditingMood(null);
+                  }}
                   className="rounded-lg bg-(--gradient-crimson) px-5 py-2 text-sm font-medium text-primary-foreground hover:brightness-110 transition"
                 >
                   + Nuevo estado
@@ -464,7 +554,10 @@ export default function AdminDashboard() {
                     key={editingMood?._id ?? "new-mood"}
                     initial={editingMood ?? undefined}
                     onSave={handleMoodSaved}
-                    onCancel={() => { setShowAddMood(false); setEditingMood(null); }}
+                    onCancel={() => {
+                      setShowAddMood(false);
+                      setEditingMood(null);
+                    }}
                   />
                 )}
               </AnimatePresence>
@@ -490,10 +583,25 @@ export default function AdminDashboard() {
                       }`}
                     >
                       <p className="text-sm text-foreground font-medium truncate">{m.label}</p>
-                      <p className="text-[11px] font-mono text-muted-foreground/60 truncate mt-0.5">{m.name}</p>
+                      <p className="text-[11px] font-mono text-muted-foreground/60 truncate mt-0.5">
+                        {m.name}
+                      </p>
                       <div className="flex gap-2 mt-3">
-                        <button onClick={() => { setEditingMood(m); setShowAddMood(false); }} className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 glass rounded-lg">Editar</button>
-                        <button onClick={() => setDeleteMoodId(m._id)} className="text-xs text-red-400/70 hover:text-red-400 transition px-2 py-1 glass rounded-lg">Borrar</button>
+                        <button
+                          onClick={() => {
+                            setEditingMood(m);
+                            setShowAddMood(false);
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 glass rounded-lg"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => setDeleteMoodId(m._id)}
+                          className="text-xs text-red-400/70 hover:text-red-400 transition px-2 py-1 glass rounded-lg"
+                        >
+                          Borrar
+                        </button>
                       </div>
                     </motion.div>
                   ))}
@@ -501,7 +609,6 @@ export default function AdminDashboard() {
               )}
             </motion.div>
           )}
-
         </AnimatePresence>
       </div>
 
@@ -575,7 +682,10 @@ function DeleteModal({
           >
             {loading ? "Borrando..." : "Sí, borrar"}
           </button>
-          <button onClick={onCancel} className="glass rounded-lg px-5 py-2 text-sm text-muted-foreground hover:text-foreground transition">
+          <button
+            onClick={onCancel}
+            className="glass rounded-lg px-5 py-2 text-sm text-muted-foreground hover:text-foreground transition"
+          >
             Cancelar
           </button>
         </div>

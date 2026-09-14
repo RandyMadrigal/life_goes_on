@@ -1,12 +1,16 @@
 {
   "name": "life-goes-on-api",
   "private": true,
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "seed": "tsx src/seed.ts",
-    "hash-password": "tsx src/scripts/hashPassword.ts"
+    "hash-password": "tsx src/scripts/hashPassword.ts",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.4",
@@ -19,6 +23,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
+    "life-goes-on-shared": "*",
     "mongoose": "^8.14.0",
     "node-cron": "^4.2.1",
     "zod": "^3.24.2"
@@ -30,10 +35,6 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.16.5",
     "@types/node-cron": "^3.0.11",
-    "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
-  },
-  "overrides": {
-    "qs": "^6.16.0"
+    "tsx": "^4.19.4"
   }
 }

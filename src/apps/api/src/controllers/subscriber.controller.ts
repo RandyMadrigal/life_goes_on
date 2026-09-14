@@ -32,9 +32,12 @@ export const subscribe = asyncHandler(async (req: Request, res: Response): Promi
   }
 
   const subscriber = await subscriberRepo.create(name, normalizedEmail);
-  res
-    .status(201)
-    .json(ApiResponse.ok("Subscribed successfully.", { name: subscriber.name, email: subscriber.email }));
+  res.status(201).json(
+    ApiResponse.ok("Subscribed successfully.", {
+      name: subscriber.name,
+      email: subscriber.email,
+    }),
+  );
 });
 
 const htmlPage = (title: string, body: string): string => `
@@ -56,7 +59,10 @@ export const unsubscribe = asyncHandler(async (req: Request, res: Response): Pro
   const token = typeof req.query.token === "string" ? req.query.token : "";
 
   if (!token) {
-    res.status(400).type("html").send(htmlPage("Invalid link", "<p>This unsubscribe link is invalid.</p>"));
+    res
+      .status(400)
+      .type("html")
+      .send(htmlPage("Invalid link", "<p>This unsubscribe link is invalid.</p>"));
     return;
   }
 
@@ -65,7 +71,12 @@ export const unsubscribe = asyncHandler(async (req: Request, res: Response): Pro
     res
       .status(404)
       .type("html")
-      .send(htmlPage("Link not found", "<p>This unsubscribe link is invalid or has already been used.</p>"));
+      .send(
+        htmlPage(
+          "Link not found",
+          "<p>This unsubscribe link is invalid or has already been used.</p>",
+        ),
+      );
     return;
   }
 

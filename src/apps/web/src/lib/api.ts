@@ -1,3 +1,5 @@
+import type { ApiEnvelope } from "life-goes-on-shared";
+
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 export interface ApiOk<T> {
@@ -17,8 +19,8 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T
       credentials: "include",
       headers: { "Content-Type": "application/json", ...init.headers },
     });
-    const body = await res.json().catch(() => ({}));
-    if (res.ok) return { ok: true, data: body.data ?? body };
+    const body = (await res.json().catch(() => ({}))) as Partial<ApiEnvelope<T>>;
+    if (res.ok) return { ok: true, data: (body.data ?? body) as T };
     return { ok: false, message: body.message ?? "Something went wrong" };
   } catch {
     return { ok: false, message: "Network error — is the API server running?" };
@@ -26,9 +28,12 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T
 }
 
 export const api = {
-  get:    <T>(path: string)                => req<T>(path, { method: "GET" }),
-  post:   <T>(path: string, data: unknown) => req<T>(path, { method: "POST",   body: JSON.stringify(data) }),
-  put:    <T>(path: string, data: unknown) => req<T>(path, { method: "PUT",    body: JSON.stringify(data) }),
-  patch:  <T>(path: string, data: unknown) => req<T>(path, { method: "PATCH",  body: JSON.stringify(data) }),
-  delete: <T>(path: string)               => req<T>(path, { method: "DELETE" }),
+  get: <T>(path: string) => req<T>(path, { method: "GET" }),
+  post: <T>(path: string, data: unknown) =>
+    req<T>(path, { method: "POST", body: JSON.stringify(data) }),
+  put: <T>(path: string, data: unknown) =>
+    req<T>(path, { method: "PUT", body: JSON.stringify(data) }),
+  patch: <T>(path: string, data: unknown) =>
+    req<T>(path, { method: "PATCH", body: JSON.stringify(data) }),
+  delete: <T>(path: string) => req<T>(path, { method: "DELETE" }),
 };

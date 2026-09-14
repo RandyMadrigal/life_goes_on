@@ -23,7 +23,10 @@ const envSchema = z.object({
   ADMIN_EMAIL: z.string().email(),
   ADMIN_PASSWORD_HASH: z
     .string()
-    .regex(/^\$2[aby]\$\d{2}\$/, "ADMIN_PASSWORD_HASH must be a bcrypt hash (generate with `npx bcrypt-cli` or the hash script)"),
+    .regex(
+      /^\$2[aby]\$\d{2}\$/,
+      "ADMIN_PASSWORD_HASH must be a bcrypt hash (generate with `npx bcrypt-cli` or the hash script)",
+    ),
 });
 
 export type Env = z.infer<typeof envSchema>;

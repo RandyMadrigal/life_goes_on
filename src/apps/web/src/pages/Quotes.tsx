@@ -1,22 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import type { QuoteDTO as Quote, MoodDTO as Mood } from "life-goes-on-shared";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphericBackdrop } from "@/components/AtmosphericBackdrop";
 import { api } from "@/lib/api";
 
 const PAGE_SIZE = 2;
-
-interface Mood {
-  name: string;
-  label: string;
-  order: number;
-}
-
-interface Quote {
-  text: string;
-  moods: string[];
-}
 
 export default function Quotes() {
   const [moods, setMoods] = useState<Mood[]>([]);
@@ -81,7 +71,10 @@ export default function Quotes() {
         >
           {moodsLoading
             ? Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="glass rounded-full px-4 py-2 w-24 h-9 animate-pulse bg-white/5" />
+                <div
+                  key={i}
+                  className="glass rounded-full px-4 py-2 w-24 h-9 animate-pulse bg-white/5"
+                />
               ))
             : moods.map((mood) => (
                 <button

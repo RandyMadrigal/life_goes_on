@@ -33,9 +33,7 @@ export const forgotPasswordLimiter = rateLimit({
   legacyHeaders: false,
   handler: (_req, _res, next) => {
     next(
-      ApiError.tooManyRequests(
-        "Too many password reset requests. Please try again in one hour.",
-      ),
+      ApiError.tooManyRequests("Too many password reset requests. Please try again in one hour."),
     );
   },
 });
@@ -46,10 +44,6 @@ export const subscribeLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, _res, next) => {
-    next(
-      ApiError.tooManyRequests(
-        "Too many subscription attempts. Please try again in one hour.",
-      ),
-    );
+    next(ApiError.tooManyRequests("Too many subscription attempts. Please try again in one hour."));
   },
 });

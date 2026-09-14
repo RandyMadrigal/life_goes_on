@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { QuoteRepository } from "../repositories/quote.repository";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
+import { toQuoteDTO } from "../utils/dto.mappers";
 
 const router = Router();
 const quoteRepo = new QuoteRepository();
@@ -13,7 +14,7 @@ router.get(
     const limit = Math.min(Math.max(Number(req.query.limit) || 1, 1), 12);
 
     const quotes = await quoteRepo.findMany(mood, limit);
-    res.status(200).json(ApiResponse.ok("ok", { quotes }));
+    res.status(200).json(ApiResponse.ok("ok", { quotes: quotes.map(toQuoteDTO) }));
   }),
 );
 

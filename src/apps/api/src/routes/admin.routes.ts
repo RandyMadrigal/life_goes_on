@@ -3,9 +3,15 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { adminAuth } from "../middlewares/adminAuth.middleware";
 import { authLimiter } from "../middlewares/rateLimiter.middleware";
 import {
-  login, logout,
-  getQuotes, createQuote, updateQuote, deleteQuote,
-  createMood, updateMood, deleteMood,
+  login,
+  logout,
+  getQuotes,
+  createQuote,
+  updateQuote,
+  deleteQuote,
+  createMood,
+  updateMood,
+  deleteMood,
 } from "../controllers/admin.controller";
 
 const router = Router();

@@ -127,8 +127,8 @@ function SubscribeSection() {
           </p>
           <h2 className="font-display text-4xl mb-4">Receive a daily word.</h2>
           <p className="text-sm text-muted-foreground mb-10 max-w-sm mx-auto leading-relaxed">
-            Every morning, a motivational phrase delivered to your inbox. Just your name and
-            email — nothing else.
+            Every morning, a motivational phrase delivered to your inbox. Just your name and email —
+            nothing else.
           </p>
 
           {status === "success" ? (

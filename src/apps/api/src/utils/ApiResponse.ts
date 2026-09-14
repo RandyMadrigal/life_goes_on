@@ -1,4 +1,6 @@
-export class ApiResponse<T> {
+import type { ApiEnvelope } from "life-goes-on-shared";
+
+export class ApiResponse<T> implements ApiEnvelope<T> {
   public readonly success: boolean;
   public readonly message: string;
   public readonly data: T | null;
