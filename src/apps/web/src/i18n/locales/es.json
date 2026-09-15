@@ -1,0 +1,114 @@
+{
+  "nav": {
+    "brand": "Life Goes On",
+    "home": "Inicio",
+    "quotes": "Frases",
+    "subscribe": "Suscribirme",
+    "toggleTheme": "Cambiar tema",
+    "toggleLanguage": "Cambiar idioma"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "命 — Inochi · Un compañero silencioso",
+      "titleStart": "La vida",
+      "titleAccent": "Sigue.",
+      "subtitleLine1": "Incluso después del dolor, la confusión, el desamor o el fracaso…",
+      "subtitleLine2": "tu historia sigue avanzando.",
+      "ctaPrimary": "Encuentra tus palabras",
+      "ctaSecondary": "Carta diaria",
+      "scrollHint": "↓ RESPIRA"
+    },
+    "kanjis": {
+      "healing": {
+        "title": "Sanación",
+        "body": "Mensajes diarios y suaves que te encuentran donde estás — sin arreglar nada, sin prisa."
+      },
+      "resilience": {
+        "title": "Resiliencia",
+        "body": "Pequeñas reflexiones que te recuerdan cada cosa imposible que ya has sobrevivido."
+      },
+      "hope": {
+        "title": "Esperanza",
+        "body": "Una carta para tu yo futuro, esperando en silencio la mañana en que más la necesites."
+      },
+      "life": {
+        "title": "Vida",
+        "body": "Estás vivo. Solo eso ya es una razón para seguir adelante."
+      },
+      "path": {
+        "title": "Camino",
+        "body": "Todo camino tiene sus sombras. Sigue caminando — la luz siempre vuelve."
+      },
+      "soul": {
+        "title": "Alma",
+        "body": "Nada rompe tu alma por completo. Se dobla, aprende y se levanta."
+      }
+    },
+    "carousel": {
+      "eyebrow": "· Palabras que permanecen ·",
+      "quotes": [
+        "Aunque sea despacio, sigues avanzando.",
+        "La tormenta va a pasar. Siempre pasa.",
+        "Has sobrevivido a cada día difícil hasta ahora.",
+        "Descansa si lo necesitas — pero no te rindas.",
+        "Sanar no es lineal. Nunca lo fue.",
+        "Tu historia todavía no ha terminado.",
+        "Los pasos pequeños también cuentan como progreso.",
+        "El dolor que sientes hoy no pesará así para siempre.",
+        "Tienes permitido tomarte tu tiempo.",
+        "Algo en ti eligió seguir adelante. Honra eso.",
+        "Has superado el 100% de tus peores días.",
+        "Esto no es el final. Es un punto de inflexión.",
+        "La versión de ti que sobreviva a esto será extraordinaria.",
+        "Respira. Has llegado hasta aquí.",
+        "No todas las lágrimas son debilidad. Algunas son prueba de que aún sientes."
+      ]
+    },
+    "subscribe": {
+      "eyebrow": "· Carta diaria ·",
+      "title": "Recibe una palabra cada día.",
+      "subtitle": "Cada mañana, una frase motivacional directo a tu correo. Solo tu nombre y tu email — nada más.",
+      "success": {
+        "title": "Ya estás dentro.",
+        "subtitle": "Una carta llegará a ti cada mañana."
+      },
+      "form": {
+        "nameLabel": "Nombre",
+        "namePlaceholder": "Tu nombre",
+        "emailLabel": "Email",
+        "emailPlaceholder": "tu@lugar.tranquilo",
+        "submitIdle": "Recibir motivación diaria →",
+        "submitLoading": "Suscribiendo…",
+        "genericError": "Algo salió mal."
+      }
+    },
+    "signature": {
+      "line1": "\"No necesitas arreglar toda tu vida esta semana.",
+      "line2": "Solo necesitas seguir avanzando un poco.",
+      "line3Accent": "Aunque sea despacio.\"",
+      "caption": "命 · Life Goes On"
+    },
+    "footer": "Hecho en silencio, para quien todavía camina hacia adelante. · 命"
+  },
+  "quotes": {
+    "eyebrow": "命 · Palabras para tu momento",
+    "title": "¿Cómo te sientes?",
+    "subtitle": "Elige lo que coincide con tu estado. Las palabras correctas te encontrarán.",
+    "pagination": {
+      "prev": "← Anterior",
+      "next": "Siguiente →",
+      "pageOf": "{{current}} / {{total}}"
+    },
+    "emptyState": {
+      "eyebrow": "命 · Palabras que te encuentran donde estás",
+      "cta": "¿Quieres recibirlas en tu correo cada mañana? Suscríbete →"
+    }
+  },
+  "notFound": {
+    "eyebrow": "命 · Perdido, pero no para siempre",
+    "title": "404",
+    "subtitle": "Esta página no existe.",
+    "body": "Incluso el camino que pensabas tomar no siempre es el que encuentras. Vamos a llevarte de vuelta.",
+    "backHome": "← Volver al inicio"
+  }
+}

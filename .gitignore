@@ -1,10 +1,27 @@
 # Dependencies
 node_modules/
 
+# Alternate package managers — this repo standardizes on npm (see package-lock.json).
+# Ignore these so an accidental `yarn`/`pnpm`/`bun install` never gets committed.
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+.pnp.*
+
 # Build output
 dist/
 dist-ssr/
 .output/
+build/
+
+# Test coverage
+coverage/
+
+# Caches
+.cache/
+.eslintcache
+.vite/
+*.local
 
 # Environment variables — NEVER commit these
 .env
@@ -13,16 +30,26 @@ dist-ssr/
 !.env.example
 
 # Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# Deploy tool state (project/org linking — regenerate locally, don't share)
+.vercel/
+.railway/
+
+# Secrets / certificates that sometimes land in a project root by accident
+*.pem
+*.key
+*.cert
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
 .idea/
-.DS_Store
+.history/
 *.suo
 *.sw?
 
@@ -30,7 +57,9 @@ pnpm-debug.log*
 *.tsbuildinfo
 
 # OS
+.DS_Store
 Thumbs.db
+desktop.ini
 
 # claude
 .claude

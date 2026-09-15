@@ -1,54 +1,87 @@
-import sgMail from "@sendgrid/mail";
+import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "../config/env";
-import type { IEmailService } from "./interfaces/IEmailService";
-import { welcomeTemplate } from "./templates/welcome.template";
-import { resetPasswordTemplate } from "./templates/resetPassword.template";
+import type { IEmailService, SendResult } from "./interfaces/IEmailService";
 import { motivationalTemplate } from "./templates/motivational.template";
+import { resetPasswordTemplate } from "./templates/resetPassword.template";
+import { maskEmail } from "../utils/maskEmail";
+
+const TIMEOUT_MS = 10_000;
 
 export class EmailService implements IEmailService {
+  private readonly configured: boolean;
+  private readonly transporter: Transporter;
+
   constructor() {
-    if (env.SENDGRID_API_KEY) {
-      sgMail.setApiKey(env.SENDGRID_API_KEY);
-    }
+    this.configured = Boolean(env.SMTP_USER && env.SMTP_PASS);
+    this.transporter = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_SECURE,
+      auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+      connectionTimeout: TIMEOUT_MS,
+      greetingTimeout: TIMEOUT_MS,
+      socketTimeout: TIMEOUT_MS,
+    });
   }
 
-  private async send(to: string, subject: string, html: string): Promise<void> {
-    if (!env.SENDGRID_API_KEY) {
-      console.log(`[EmailService] No API key — skipped. To: ${to} | Subject: ${subject}`);
+  /**
+   * Verifies the SMTP connection/credentials without sending any mail.
+   * Safe to call at startup — logs the result, never throws.
+   */
+  async verifyConnection(): Promise<void> {
+    if (!this.configured) {
+      console.log("[EmailService] SMTP_USER/SMTP_PASS not set — email sending is disabled.");
       return;
     }
     try {
-      await sgMail.send({
-        to,
-        from: { email: env.FROM_EMAIL, name: "Life Goes On" },
-        subject,
-        html,
-      });
-      console.log(`[EmailService] Sent → ${to} | ${subject}`);
+      await this.transporter.verify();
+      console.log(`[EmailService] ✅  SMTP connection OK (${env.SMTP_HOST}:${env.SMTP_PORT})`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      // Log but don't throw — a failed email should never break the auth flow
-      console.error(`[EmailService] Failed → ${to} | ${subject} | ${message}`);
+      console.error(`[EmailService] ❌  SMTP verification failed: ${message}`);
     }
   }
 
-  async sendWelcome(to: string, name: string): Promise<void> {
-    await this.send(to, "Welcome to Life Goes On 命", welcomeTemplate(name));
+  private async send(to: string, subject: string, html: string): Promise<SendResult> {
+    if (!this.configured) {
+      const error = "SMTP not configured (SMTP_USER/SMTP_PASS unset)";
+      console.log(`[EmailService] ${error} — skipped. To: ${maskEmail(to)} | Subject: ${subject}`);
+      return { success: false, error };
+    }
+    try {
+      await this.transporter.sendMail({
+        to,
+        from: `"Life Goes On" <${env.FROM_EMAIL}>`,
+        subject,
+        html,
+      });
+      console.log(`[EmailService] Sent → ${maskEmail(to)}`);
+      return { success: true };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[EmailService] Failed → ${maskEmail(to)} | ${message}`);
+      return { success: false, error: message };
+    }
   }
 
-  async sendPasswordReset(to: string, name: string, resetUrl: string): Promise<void> {
-    await this.send(
+  async sendMotivationalMessage(
+    to: string,
+    name: string,
+    message: string,
+    unsubscribeUrl: string,
+  ): Promise<SendResult> {
+    return this.send(
       to,
-      "Reset your password — Life Goes On",
-      resetPasswordTemplate(name, resetUrl),
+      "A message for you — Life Goes On 命",
+      motivationalTemplate(name, message, unsubscribeUrl),
     );
   }
 
-  async sendMotivationalMessage(to: string, name: string, message: string): Promise<void> {
-    await this.send(
+  async sendPasswordReset(to: string, resetUrl: string): Promise<SendResult> {
+    return this.send(
       to,
-      "A message for you — Life Goes On 命",
-      motivationalTemplate(name, message),
+      "Reset your admin password — Life Goes On",
+      resetPasswordTemplate(resetUrl),
     );
   }
 }

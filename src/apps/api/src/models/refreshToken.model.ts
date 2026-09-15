@@ -1,33 +1,19 @@
-import mongoose, { Schema } from "mongoose";
+import { Schema, model } from "mongoose";
 import type { IRefreshToken } from "../interfaces/IRefreshToken";
 
 const refreshTokenSchema = new Schema<IRefreshToken>(
   {
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true,
-    },
-    token: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    // TTL index: MongoDB auto-deletes documents when expiresAt is reached
-    expiresAt: {
-      type: Date,
-      required: true,
-      index: { expires: 0 },
-    },
+    adminId: { type: Schema.Types.ObjectId, required: true, ref: "Admin" },
+    tokenHash: { type: String, required: true, unique: true },
+    familyId: { type: String, required: true },
+    expiresAt: { type: Date, required: true },
+    revokedAt: { type: Date, default: null },
   },
-  {
-    timestamps: { createdAt: true, updatedAt: false },
-    versionKey: false,
-  },
+  { timestamps: { createdAt: true, updatedAt: false } },
 );
 
-export const RefreshTokenModel = mongoose.model<IRefreshToken>(
-  "RefreshToken",
-  refreshTokenSchema,
-);
+refreshTokenSchema.index({ familyId: 1 });
+// MongoDB removes the document once expiresAt is in the past — no manual cleanup job needed.
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+export const RefreshTokenModel = model<IRefreshToken>("RefreshToken", refreshTokenSchema);

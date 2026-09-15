@@ -1,14 +1,39 @@
 {
   "name": "life-goes-on",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "workspaces": [
+    "src/apps/*",
+    "src/packages/*"
+  ],
   "scripts": {
-    "dev": "npm run --prefix src/apps/web/src dev",
-    "dev:api": "npm run --prefix src/apps/api dev",
-    "dev:all": "npm run dev:api & npm run dev",
-    "build": "npm run build:web && npm run build:api",
-    "build:web": "npm run --prefix src/apps/web/src build",
-    "build:api": "npm run --prefix src/apps/api build",
-    "preview": "npm run --prefix src/apps/web/src preview",
-    "install:all": "npm install --prefix src/apps/web/src && npm install --prefix src/apps/api"
+    "dev": "npm run dev -w life-goes-on-web",
+    "dev:api": "npm run dev -w life-goes-on-api",
+    "dev:all": "concurrently -n API,WEB -c blue,magenta \"npm:dev:api\" \"npm:dev\"",
+    "build": "npm run build -w life-goes-on-api && npm run build -w life-goes-on-web",
+    "build:web": "npm run build -w life-goes-on-web",
+    "build:api": "npm run build -w life-goes-on-api",
+    "preview": "npm run preview -w life-goes-on-web",
+    "install:all": "npm install",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "tsc --noEmit -p src/apps/api && tsc -b src/apps/web",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.6",
+    "globals": "^15.15.0",
+    "prettier": "^3.7.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.56.1"
+  },
+  "overrides": {
+    "qs": "^6.16.0"
   }
 }

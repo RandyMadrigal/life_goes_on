@@ -1,0 +1,114 @@
+{
+  "nav": {
+    "brand": "Life Goes On",
+    "home": "Home",
+    "quotes": "Quotes",
+    "subscribe": "Subscribe",
+    "toggleTheme": "Toggle theme",
+    "toggleLanguage": "Toggle language"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "命 — Inochi · A quiet companion",
+      "titleStart": "Life Goes",
+      "titleAccent": "On.",
+      "subtitleLine1": "Even after pain, confusion, heartbreak, or failure…",
+      "subtitleLine2": "your story is still moving forward.",
+      "ctaPrimary": "Find your words",
+      "ctaSecondary": "Daily letter",
+      "scrollHint": "↓ BREATHE"
+    },
+    "kanjis": {
+      "healing": {
+        "title": "Healing",
+        "body": "Soft daily messages that meet you where you are — no fixing, no rushing."
+      },
+      "resilience": {
+        "title": "Resilience",
+        "body": "Small reflections to remind you of every impossible thing you've already survived."
+      },
+      "hope": {
+        "title": "Hope",
+        "body": "A letter to your future self, waiting quietly for the morning you need it most."
+      },
+      "life": {
+        "title": "Life",
+        "body": "You are alive. That alone is already a reason to keep going."
+      },
+      "path": {
+        "title": "Path",
+        "body": "Every path has its shadows. Keep walking — the light always returns."
+      },
+      "soul": {
+        "title": "Soul",
+        "body": "Nothing breaks your soul completely. It bends, it learns, and it rises."
+      }
+    },
+    "carousel": {
+      "eyebrow": "· Words that stay ·",
+      "quotes": [
+        "Even slowly, you are still moving forward.",
+        "The storm will pass. It always does.",
+        "You survived every hard day so far.",
+        "Rest if you must — but do not give up.",
+        "Healing is not linear. It never was.",
+        "Your story is not over yet.",
+        "Small steps still count as progress.",
+        "The pain you feel today will not weigh this much forever.",
+        "You are allowed to take your time.",
+        "Something in you chose to keep going. Honor that.",
+        "You have gotten through 100% of your worst days.",
+        "This is not the end. It is a turning point.",
+        "The version of you that survives this will be extraordinary.",
+        "Breathe. You have made it this far.",
+        "Not all tears are a sign of weakness. Some are proof you still feel."
+      ]
+    },
+    "subscribe": {
+      "eyebrow": "· Daily letter ·",
+      "title": "Receive a daily word.",
+      "subtitle": "Every morning, a motivational phrase delivered to your inbox. Just your name and email — nothing else.",
+      "success": {
+        "title": "You're in.",
+        "subtitle": "A letter will reach you every morning."
+      },
+      "form": {
+        "nameLabel": "Name",
+        "namePlaceholder": "Your name",
+        "emailLabel": "Email",
+        "emailPlaceholder": "you@quiet.place",
+        "submitIdle": "Receive daily motivation →",
+        "submitLoading": "Subscribing…",
+        "genericError": "Something went wrong."
+      }
+    },
+    "signature": {
+      "line1": "\"You do not need to fix your entire life this week.",
+      "line2": "You only need to keep moving forward a little.",
+      "line3Accent": "Even slowly.\"",
+      "caption": "命 · Life Goes On"
+    },
+    "footer": "Made quietly, for anyone still walking forward. · 命"
+  },
+  "quotes": {
+    "eyebrow": "命 · Words for your moment",
+    "title": "How are you feeling?",
+    "subtitle": "Choose what matches your state. The right words will find you.",
+    "pagination": {
+      "prev": "← Prev",
+      "next": "Next →",
+      "pageOf": "{{current}} / {{total}}"
+    },
+    "emptyState": {
+      "eyebrow": "命 · Words that meet you where you are",
+      "cta": "Want them in your inbox every morning? Subscribe →"
+    }
+  },
+  "notFound": {
+    "eyebrow": "命 · Lost, but not forever",
+    "title": "404",
+    "subtitle": "This page doesn't exist.",
+    "body": "Even the path you meant to take isn't always the one you find. Let's get you back.",
+    "backHome": "← Back home"
+  }
+}

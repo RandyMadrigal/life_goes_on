@@ -1,54 +1,79 @@
-import cron from "node-cron";
-import { UserModel } from "../models/user.model";
+import { SubscriberModel } from "../models/subscriber.model";
 import { EmailService } from "../services/email.service";
-import { UserRepository } from "../repositories/user.repository";
-import { quotes } from "../data/quotes";
-import type { Mood } from "../interfaces/IUser";
+import { QuoteRepository } from "../repositories/quote.repository";
+import { SubscriberRepository } from "../repositories/subscriber.repository";
+import { EmailDeliveryRepository } from "../repositories/emailDelivery.repository";
+import { startOfUtcDay } from "../utils/date.utils";
+import { env } from "../config/env";
 
-function pickQuote(mood: Mood): string {
-  const pool = quotes.filter((q) => q.moods.includes(mood));
-  const source = pool.length > 0 ? pool : quotes;
-  return source[Math.floor(Math.random() * source.length)].text;
+const quoteRepo = new QuoteRepository();
+const subscriberRepo = new SubscriberRepository();
+const deliveryRepo = new EmailDeliveryRepository();
+const emailService = new EmailService();
+
+const buildUnsubscribeUrl = (token: string): string =>
+  `${env.API_BASE_URL}/api/v1/subscribe/unsubscribe?token=${token}`;
+
+export interface SendDailyEmailsResult {
+  total: number;
+  sent: number;
+  failed: number;
+  skipped: number;
 }
 
-export const scheduleMotivationalEmails = (): void => {
-  const emailService = new EmailService();
-  const userRepository = new UserRepository();
+/**
+ * Sends today's motivational email to every active subscriber who hasn't
+ * already received one today. Safe to call more than once for the same day
+ * — subscribers with an existing EmailDelivery record for today are skipped,
+ * so a retried/duplicated trigger never double-sends.
+ */
+export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
+  const today = startOfUtcDay();
+  const subscribers = await SubscriberModel.find({ active: true }).exec();
 
-  // Every hour: send to users whose preferredEmailTime matches the current UTC hour
-  cron.schedule("0 * * * *", async () => {
-    const now = new Date();
-    const currentTime = `${String(now.getUTCHours()).padStart(2, "0")}:00`;
+  if (subscribers.length === 0) {
+    return { total: 0, sent: 0, failed: 0, skipped: 0 };
+  }
 
-    try {
-      const users = await UserModel.find({ preferredEmailTime: currentTime });
-      if (users.length === 0) return;
+  let sent = 0;
+  let failed = 0;
+  let skipped = 0;
 
-      const results = await Promise.allSettled(
-        users.map((user) =>
-          emailService.sendMotivationalMessage(
-            user.email,
-            user.name,
-            pickQuote(user.mood),
-          ),
-        ),
+  await Promise.allSettled(
+    subscribers.map(async (sub) => {
+      if (await deliveryRepo.existsForDate(sub._id, today)) {
+        skipped += 1;
+        return;
+      }
+
+      const [quote] = await quoteRepo.findMany(undefined, 1, sub.language);
+      if (!quote) throw new Error("No quotes in database");
+
+      // Fresh token per send: the same subscriber gets a new unsubscribe
+      // link in every email, so a leaked/stale token from an old email
+      // can't be replayed — see the design note in subscriber.repository.ts.
+      const unsubscribeToken = await subscriberRepo.rotateUnsubscribeToken(sub._id);
+
+      const result = await emailService.sendMotivationalMessage(
+        sub.email,
+        sub.name,
+        quote.text,
+        buildUnsubscribeUrl(unsubscribeToken),
       );
 
-      // Increment emailsSent + streak only for users whose email succeeded
-      await Promise.allSettled(
-        results.map((result, i) => {
-          if (result.status === "fulfilled") {
-            return userRepository.incrementEmailStats(users[i]!._id.toString());
-          }
-        }),
-      );
+      if (result.success) {
+        await deliveryRepo.record(sub._id, quote._id, today, "sent");
+        sent += 1;
+      } else {
+        await deliveryRepo.record(sub._id, quote._id, today, "failed", result.error);
+        failed += 1;
+      }
+    }),
+  );
 
-      const sent = results.filter((r) => r.status === "fulfilled").length;
-      console.log(`📬  Sent motivational emails to ${sent}/${users.length} user(s) at ${currentTime} UTC`);
-    } catch (err) {
-      console.error("📬  Email job error:", err);
-    }
-  });
+  console.log(
+    `📬  Daily email run: ${sent} sent, ${failed} failed, ${skipped} already sent today (of ${subscribers.length} active)`,
+  );
 
-  console.log("📬  Email scheduler initialized — runs every hour on the hour");
+  return { total: subscribers.length, sent, failed, skipped };
 };

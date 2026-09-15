@@ -13,7 +13,9 @@ function getInitialTheme(): Theme {
   try {
     const saved = localStorage.getItem("theme");
     if (saved === "light") return "light";
-  } catch {}
+  } catch {
+    // localStorage unavailable (e.g. private browsing) — fall back to dark.
+  }
   return "dark";
 }
 
@@ -27,11 +29,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

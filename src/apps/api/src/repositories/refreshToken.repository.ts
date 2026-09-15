@@ -1,21 +1,37 @@
+import type { Types } from "mongoose";
 import type { IRefreshTokenRepository } from "./interfaces/IRefreshTokenRepository";
 import type { IRefreshToken } from "../interfaces/IRefreshToken";
 import { RefreshTokenModel } from "../models/refreshToken.model";
 
 export class RefreshTokenRepository implements IRefreshTokenRepository {
-  async create(userId: string, token: string, expiresAt: Date): Promise<IRefreshToken> {
-    return RefreshTokenModel.create({ userId, token, expiresAt });
+  async create(
+    adminId: Types.ObjectId,
+    tokenHash: string,
+    familyId: string,
+    expiresAt: Date,
+  ): Promise<IRefreshToken> {
+    return RefreshTokenModel.create({ adminId, tokenHash, familyId, expiresAt });
   }
 
-  async findByToken(token: string): Promise<IRefreshToken | null> {
-    return RefreshTokenModel.findOne({ token }).exec();
+  async findByHash(tokenHash: string): Promise<IRefreshToken | null> {
+    return RefreshTokenModel.findOne({ tokenHash }).exec();
   }
 
-  async deleteByToken(token: string): Promise<void> {
-    await RefreshTokenModel.deleteOne({ token }).exec();
+  async revoke(id: Types.ObjectId): Promise<void> {
+    await RefreshTokenModel.updateOne({ _id: id }, { revokedAt: new Date() }).exec();
   }
 
-  async deleteByUserId(userId: string): Promise<void> {
-    await RefreshTokenModel.deleteMany({ userId }).exec();
+  async revokeFamily(familyId: string): Promise<void> {
+    await RefreshTokenModel.updateMany(
+      { familyId, revokedAt: null },
+      { revokedAt: new Date() },
+    ).exec();
+  }
+
+  async revokeAllForAdmin(adminId: Types.ObjectId): Promise<void> {
+    await RefreshTokenModel.updateMany(
+      { adminId, revokedAt: null },
+      { revokedAt: new Date() },
+    ).exec();
   }
 }
