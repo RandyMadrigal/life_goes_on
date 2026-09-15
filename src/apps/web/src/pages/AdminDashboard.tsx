@@ -404,21 +404,21 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-(--gradient-crimson) text-base font-display">
+      <header className="border-b border-white/10 px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--gradient-crimson) text-base font-display">
             命
           </span>
-          <div>
-            <p className="text-sm font-medium text-foreground">Life Goes On — Admin</p>
-            <p className="text-xs text-muted-foreground">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">Life Goes On — Admin</p>
+            <p className="text-xs text-muted-foreground truncate">
               {total} frases · {moods.length} estados · {subscriberTotal} suscriptores
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0">
           {deliverySummary && deliverySummary.total > 0 && (
             <div className="hidden sm:flex items-center gap-3 text-xs">
               <span className="text-emerald-400">✓ {deliverySummary.sent} enviados hoy</span>
@@ -429,7 +429,7 @@ export default function AdminDashboard() {
           )}
           <button
             onClick={handleLogout}
-            className="glass rounded-full px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground transition"
+            className="glass rounded-full px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground transition whitespace-nowrap"
           >
             Cerrar sesión
           </button>
@@ -437,12 +437,12 @@ export default function AdminDashboard() {
       </header>
 
       {/* ── Tabs ────────────────────────────────────────────────────────────── */}
-      <div className="border-b border-white/10 px-6 flex gap-1">
+      <div className="border-b border-white/10 px-4 sm:px-6 flex gap-1 overflow-x-auto">
         {(["quotes", "moods", "subscribers"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-3 text-sm transition border-b-2 -mb-px ${
+            className={`px-4 py-3 text-sm transition border-b-2 -mb-px whitespace-nowrap shrink-0 ${
               tab === t
                 ? "border-crimson text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -453,7 +453,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-4xl px-5 sm:px-6 py-8">
         <AnimatePresence mode="wait">
           {/* ══ QUOTES TAB ══════════════════════════════════════════════════ */}
           {tab === "quotes" && (

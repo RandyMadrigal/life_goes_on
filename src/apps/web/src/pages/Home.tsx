@@ -83,7 +83,6 @@ function SubscribeSection() {
 
   return (
     <section id="subscribe" className="relative py-28 px-4">
-      <AtmosphericBackdrop petals={12} />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -188,6 +187,10 @@ export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden text-foreground">
       <Navbar />
+      {/* Fixed full-viewport backdrop — one instance covers the whole
+          scrollable page, no need to repeat it per section (each repeat
+          was a duplicate blurred/animated layer, costly to repaint on scroll). */}
+      <AtmosphericBackdrop petals={22} />
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center px-4">
@@ -201,8 +204,6 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-linear-to-b from-background/30 via-background/40 to-background" />
         </div>
-
-        <AtmosphericBackdrop petals={22} />
 
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <motion.p
@@ -269,7 +270,6 @@ export default function Home() {
 
       {/* Philosophy */}
       <section className="relative py-32 px-4">
-        <AtmosphericBackdrop petals={10} />
         <div className="relative z-10 mx-auto max-w-5xl grid md:grid-cols-3 gap-6">
           {kanjis.map((c, i) => (
             <motion.div
