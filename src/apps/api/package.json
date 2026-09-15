@@ -24,7 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "life-goes-on-shared": "*",
     "mongoose": "^8.14.0",
-    "nodemailer": "^10.0.9",
+    "resend": "^6.28.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

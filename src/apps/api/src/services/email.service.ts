@@ -1,63 +1,72 @@
-import nodemailer, { type Transporter } from "nodemailer";
+import { Resend } from "resend";
 import { env } from "../config/env";
 import type { IEmailService, SendResult } from "./interfaces/IEmailService";
 import { motivationalTemplate } from "./templates/motivational.template";
 import { resetPasswordTemplate } from "./templates/resetPassword.template";
 import { maskEmail } from "../utils/maskEmail";
 
-const TIMEOUT_MS = 10_000;
-
+// Sends mail via the Resend API (HTTPS) instead of raw SMTP — several hosts
+// (Railway included) block outbound SMTP ports at the network level. Resend
+// requires a verified sending domain to mail arbitrary recipients (not just
+// the account owner), which is why FROM_EMAIL now lives on a dedicated
+// domain instead of a personal Gmail address.
 export class EmailService implements IEmailService {
   private readonly configured: boolean;
-  private readonly transporter: Transporter;
+  private readonly resend: Resend | null;
 
   constructor() {
-    this.configured = Boolean(env.SMTP_USER && env.SMTP_PASS);
-    this.transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_SECURE,
-      // When not using implicit TLS (port 465), fail the connection instead
-      // of ever falling back to a plaintext SMTP session.
-      requireTLS: !env.SMTP_SECURE,
-      auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
-      connectionTimeout: TIMEOUT_MS,
-      greetingTimeout: TIMEOUT_MS,
-      socketTimeout: TIMEOUT_MS,
-    });
+    this.configured = Boolean(env.RESEND_API_KEY);
+    this.resend = this.configured ? new Resend(env.RESEND_API_KEY) : null;
   }
 
   /**
-   * Verifies the SMTP connection/credentials without sending any mail.
-   * Safe to call at startup — logs the result, never throws.
+   * Confirms the API key works and the FROM_EMAIL domain is verified in
+   * Resend, without sending any mail. Safe to call at startup — logs the
+   * result, never throws.
    */
   async verifyConnection(): Promise<void> {
-    if (!this.configured) {
-      console.log("[EmailService] SMTP_USER/SMTP_PASS not set — email sending is disabled.");
+    if (!this.configured || !this.resend) {
+      console.log("[EmailService] RESEND_API_KEY not set — email sending is disabled.");
       return;
     }
     try {
-      await this.transporter.verify();
-      console.log(`[EmailService] ✅  SMTP connection OK (${env.SMTP_HOST}:${env.SMTP_PORT})`);
+      const { data, error } = await this.resend.domains.list();
+      if (error) throw new Error(error.message);
+
+      const fromDomain = env.FROM_EMAIL.split("@")[1];
+      const domain = data.data.find((d) => d.name === fromDomain);
+
+      if (!domain) {
+        console.warn(
+          `[EmailService] ⚠️  No Resend domain matches FROM_EMAIL's domain (${fromDomain})`,
+        );
+      } else if (domain.status !== "verified") {
+        console.warn(
+          `[EmailService] ⚠️  Resend domain "${domain.name}" is not verified yet (status: ${domain.status})`,
+        );
+      } else {
+        console.log(`[EmailService] ✅  Resend OK — domain "${domain.name}" verified`);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[EmailService] ❌  SMTP verification failed: ${message}`);
+      console.error(`[EmailService] ❌  Resend verification failed: ${message}`);
     }
   }
 
   private async send(to: string, subject: string, html: string): Promise<SendResult> {
-    if (!this.configured) {
-      const error = "SMTP not configured (SMTP_USER/SMTP_PASS unset)";
+    if (!this.configured || !this.resend) {
+      const error = "Resend not configured (RESEND_API_KEY unset)";
       console.log(`[EmailService] ${error} — skipped. To: ${maskEmail(to)} | Subject: ${subject}`);
       return { success: false, error };
     }
     try {
-      await this.transporter.sendMail({
+      const { error } = await this.resend.emails.send({
+        from: `Life Goes On <${env.FROM_EMAIL}>`,
         to,
-        from: `"Life Goes On" <${env.FROM_EMAIL}>`,
         subject,
         html,
       });
+      if (error) throw new Error(error.message);
       console.log(`[EmailService] Sent → ${maskEmail(to)}`);
       return { success: true };
     } catch (err: unknown) {
