@@ -17,6 +17,9 @@ export class EmailService implements IEmailService {
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_SECURE,
+      // When not using implicit TLS (port 465), fail the connection instead
+      // of ever falling back to a plaintext SMTP session.
+      requireTLS: !env.SMTP_SECURE,
       auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
       connectionTimeout: TIMEOUT_MS,
       greetingTimeout: TIMEOUT_MS,
