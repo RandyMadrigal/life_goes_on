@@ -1,9 +1,15 @@
 import "dotenv/config";
+import dns from "dns";
 import { env } from "./config/env";
 import { connectDatabase } from "./config/database";
 import createApp from "./config/app";
 import { EmailService } from "./services/email.service";
 import { AdminRepository } from "./repositories/admin.repository";
+
+// Some hosts (e.g. Railway) resolve outbound hostnames (like smtp.gmail.com)
+// to an IPv6 address with no real route, failing with ENETUNREACH. Prefer
+// IPv4 results process-wide so outbound connections don't hit that dead end.
+dns.setDefaultResultOrder("ipv4first");
 
 const start = async (): Promise<void> => {
   await connectDatabase();
