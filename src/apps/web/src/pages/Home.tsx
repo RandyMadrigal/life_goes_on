@@ -1,10 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { MoodDTO as Mood } from "life-goes-on-shared";
 import samuraiHero from "@/assets/samurai-hero.jpg";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphericBackdrop } from "@/components/AtmosphericBackdrop";
+import { Splash, hasSeenSplash } from "@/components/Splash";
 import { api } from "@/lib/api";
 
 const KANJI_CHARS: Record<string, string> = {
@@ -174,6 +176,8 @@ function SubscribeSection() {
 
 export default function Home() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [showSplash, setShowSplash] = useState(() => !hasSeenSplash());
 
   const kanjis = KANJI_KEYS.map((key) => ({
     key,
@@ -183,6 +187,17 @@ export default function Home() {
   }));
 
   const carouselQuotes = t("home.carousel.quotes", { returnObjects: true }) as string[];
+
+  if (showSplash) {
+    return (
+      <Splash
+        onFinish={(mood?: Mood) => {
+          setShowSplash(false);
+          if (mood) navigate("/quotes", { state: { moodName: mood.name } });
+        }}
+      />
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden text-foreground">
@@ -366,8 +381,14 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/5 py-10 text-center text-xs text-muted-foreground">
-        {t("home.footer")}
+      <footer className="relative z-10 border-t border-white/5 py-10 flex flex-col items-center gap-2 text-center text-xs text-muted-foreground">
+        <p>{t("home.footer")}</p>
+        <Link
+          to="/privacy"
+          className="hover:text-foreground transition underline underline-offset-4"
+        >
+          {t("home.footerPrivacyLink")}
+        </Link>
       </footer>
     </div>
   );

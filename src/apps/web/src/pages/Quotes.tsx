@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { QuoteDTO as Quote, MoodDTO as Mood } from "life-goes-on-shared";
 import { Navbar } from "@/components/Navbar";
@@ -11,6 +11,7 @@ const PAGE_SIZE = 2;
 
 export default function Quotes() {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
   const language = i18n.language?.startsWith("es") ? "es" : "en";
 
   const [moods, setMoods] = useState<Mood[]>([]);
@@ -19,6 +20,16 @@ export default function Quotes() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [moodsLoading, setMoodsLoading] = useState(true);
+
+  const fetchQuotes = async (mood: Mood) => {
+    setLoading(true);
+    setPage(0);
+    const result = await api.get<{ quotes: Quote[] }>(
+      `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=12&language=${encodeURIComponent(language)}`,
+    );
+    if (result.ok) setQuotes(result.data.quotes);
+    setLoading(false);
+  };
 
   useEffect(() => {
     // Language changed (or first load) — clear any stale-language mood/quote
@@ -30,23 +41,26 @@ export default function Quotes() {
     api
       .get<{ moods: Mood[] }>(`/api/v1/moods?language=${encodeURIComponent(language)}`)
       .then((result) => {
-        if (result.ok) setMoods(result.data.moods);
+        if (result.ok) {
+          setMoods(result.data.moods);
+          // Arriving from the intro splash with a mood already picked there
+          // — jump straight into it instead of showing an empty mood picker.
+          const preselectName = (location.state as { moodName?: string } | null)?.moodName;
+          const preselect = preselectName
+            ? result.data.moods.find((m) => m.name === preselectName)
+            : undefined;
+          if (preselect) {
+            setSelectedMood(preselect);
+            void fetchQuotes(preselect);
+          }
+        }
         setMoodsLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
   const totalPages = Math.ceil(quotes.length / PAGE_SIZE);
   const visible = quotes.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
-
-  const fetchQuotes = async (mood: Mood) => {
-    setLoading(true);
-    setPage(0);
-    const result = await api.get<{ quotes: Quote[] }>(
-      `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=12&language=${encodeURIComponent(language)}`,
-    );
-    if (result.ok) setQuotes(result.data.quotes);
-    setLoading(false);
-  };
 
   const handleMoodSelect = (mood: Mood) => {
     setSelectedMood(mood);

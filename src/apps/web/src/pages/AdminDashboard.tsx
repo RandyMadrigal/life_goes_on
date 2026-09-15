@@ -746,20 +746,12 @@ export default function AdminDashboard() {
                         <p className="text-xs text-muted-foreground truncate">{s.email}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span
-                          className={`text-[10px] rounded-full px-2 py-0.5 ${
-                            s.active
-                              ? "bg-emerald-500/10 text-emerald-400"
-                              : "bg-white/8 text-muted-foreground"
-                          }`}
-                        >
-                          {s.active ? "Activo" : "Dado de baja"}
+                        <span className="text-[10px] rounded-full px-2 py-0.5 bg-emerald-500/10 text-emerald-400">
+                          Activo
                         </span>
                         <span className="text-[10px] text-muted-foreground/60">
-                          {s.active ? "Desde " : "Baja "}
-                          {new Date(
-                            s.active ? s.subscribedAt : (s.unsubscribedAt ?? s.subscribedAt),
-                          ).toLocaleDateString("es", {
+                          Desde{" "}
+                          {new Date(s.subscribedAt).toLocaleDateString("es", {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
