@@ -17,8 +17,19 @@ const envSchema = z.object({
   // domain to be verified in Resend (dashboard → Domains).
   RESEND_API_KEY: z.string().default(""),
   FROM_EMAIL: z.string().email().default("noreply@dailyinochi.com"),
-  FRONTEND_URL: z.string().url().default("http://localhost:5173"),
-  API_BASE_URL: z.string().url().default("http://localhost:3001"),
+  // Trailing slash stripped — both get concatenated with a path that starts
+  // with "/" (e.g. `${API_BASE_URL}/api/v1/...`), and a trailing slash here
+  // would silently produce a double slash and 404.
+  FRONTEND_URL: z
+    .string()
+    .url()
+    .default("http://localhost:5173")
+    .transform((v) => v.replace(/\/+$/, "")),
+  API_BASE_URL: z
+    .string()
+    .url()
+    .default("http://localhost:3001")
+    .transform((v) => v.replace(/\/+$/, "")),
   BCRYPT_ROUNDS: z
     .string()
     .default("12")
