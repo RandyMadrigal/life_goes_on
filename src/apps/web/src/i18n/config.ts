@@ -4,7 +4,11 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import en from "./locales/en.json";
 import es from "./locales/es.json";
 
-void i18n
+const applyHtmlLang = (lng: string): void => {
+  document.documentElement.lang = lng.startsWith("es") ? "es" : "en";
+};
+
+i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
@@ -21,6 +25,12 @@ void i18n
     interpolation: {
       escapeValue: false,
     },
+  })
+  .then(() => applyHtmlLang(i18n.language))
+  .catch(() => {
+    // Init failed — leave <html lang> at its static default (en).
   });
+
+i18n.on("languageChanged", applyHtmlLang);
 
 export default i18n;
