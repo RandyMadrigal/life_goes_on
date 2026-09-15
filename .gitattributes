@@ -1,0 +1,4 @@
+# Normalize all text files to LF, regardless of core.autocrlf on Windows —
+# Prettier is configured for LF and Windows checkouts kept reintroducing CRLF,
+# breaking `npm run lint` after every checkout/merge.
+* text=auto eol=lf
