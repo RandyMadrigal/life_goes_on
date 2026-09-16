@@ -8,14 +8,14 @@ import {
   logout,
   forgotPassword,
   resetPassword,
+} from "../controllers/adminAuth.controller";
+import {
   getQuotes,
   createQuote,
   updateQuote,
   deleteQuote,
-  createMood,
-  updateMood,
-  deleteMood,
-} from "../controllers/admin.controller";
+} from "../controllers/adminQuote.controller";
+import { createMood, updateMood, deleteMood } from "../controllers/adminMood.controller";
 import { getSubscribers } from "../controllers/subscriber.controller";
 import { getTodaysDeliverySummary } from "../controllers/delivery.controller";
 

@@ -9,8 +9,8 @@ export interface DeliverySummary {
 }
 
 export interface IEmailDeliveryRepository {
-  /** True if this subscriber already has a delivery record (sent or failed) for that day. */
-  existsForDate(subscriberId: Types.ObjectId, date: Date): Promise<boolean>;
+  /** All subscriber IDs that already have a delivery record (sent or failed) for that day. */
+  findDeliveredSubscriberIds(date: Date): Promise<Set<string>>;
   record(
     subscriberId: Types.ObjectId,
     quoteId: Types.ObjectId,

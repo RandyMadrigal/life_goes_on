@@ -39,9 +39,13 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
   let failed = 0;
   let skipped = 0;
 
+  // One query for "who already got today's email" instead of one per
+  // subscriber inside the loop below.
+  const alreadyDelivered = await deliveryRepo.findDeliveredSubscriberIds(today);
+
   await Promise.allSettled(
     subscribers.map(async (sub) => {
-      if (await deliveryRepo.existsForDate(sub._id, today)) {
+      if (alreadyDelivered.has(sub._id.toString())) {
         skipped += 1;
         return;
       }

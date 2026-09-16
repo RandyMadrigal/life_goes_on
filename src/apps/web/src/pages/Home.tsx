@@ -191,9 +191,9 @@ export default function Home() {
   if (showSplash) {
     return (
       <Splash
-        onFinish={(mood?: Mood) => {
+        onFinish={(mood?: Mood, moods?: Mood[]) => {
           setShowSplash(false);
-          if (mood) navigate("/quotes", { state: { moodName: mood.name } });
+          if (mood) navigate("/quotes", { state: { moodName: mood.name, moods } });
         }}
       />
     );

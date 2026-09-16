@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -21,12 +21,19 @@ export default function Quotes() {
   const [loading, setLoading] = useState(false);
   const [moodsLoading, setMoodsLoading] = useState(true);
 
+  // Guards against out-of-order responses: if the user clicks a second mood
+  // before the first request resolves, only the latest request's result
+  // should ever be applied.
+  const requestId = useRef(0);
+
   const fetchQuotes = async (mood: Mood) => {
+    const id = ++requestId.current;
     setLoading(true);
     setPage(0);
     const result = await api.get<{ quotes: Quote[] }>(
-      `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=12&language=${encodeURIComponent(language)}`,
+      `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=6&language=${encodeURIComponent(language)}`,
     );
+    if (id !== requestId.current) return;
     if (result.ok) setQuotes(result.data.quotes);
     setLoading(false);
   };
@@ -38,23 +45,36 @@ export default function Quotes() {
     setQuotes([]);
     setPage(0);
     setMoodsLoading(true);
+
+    const preselectName = (location.state as { moodName?: string } | null)?.moodName;
+    const stateMoods = (location.state as { moods?: Mood[] } | null)?.moods;
+
+    const applyMoods = (loadedMoods: Mood[]) => {
+      setMoods(loadedMoods);
+      // Arriving from the intro splash with a mood already picked there
+      // — jump straight into it instead of showing an empty mood picker.
+      const preselect = preselectName
+        ? loadedMoods.find((m) => m.name === preselectName)
+        : undefined;
+      if (preselect) {
+        setSelectedMood(preselect);
+        void fetchQuotes(preselect);
+      }
+      setMoodsLoading(false);
+    };
+
+    // The splash already fetched this exact list seconds ago — reuse it
+    // instead of asking the API for the same thing again.
+    if (stateMoods && stateMoods.length > 0) {
+      applyMoods(stateMoods);
+      return;
+    }
+
     api
       .get<{ moods: Mood[] }>(`/api/v1/moods?language=${encodeURIComponent(language)}`)
       .then((result) => {
-        if (result.ok) {
-          setMoods(result.data.moods);
-          // Arriving from the intro splash with a mood already picked there
-          // — jump straight into it instead of showing an empty mood picker.
-          const preselectName = (location.state as { moodName?: string } | null)?.moodName;
-          const preselect = preselectName
-            ? result.data.moods.find((m) => m.name === preselectName)
-            : undefined;
-          if (preselect) {
-            setSelectedMood(preselect);
-            void fetchQuotes(preselect);
-          }
-        }
-        setMoodsLoading(false);
+        if (result.ok) applyMoods(result.data.moods);
+        else setMoodsLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);

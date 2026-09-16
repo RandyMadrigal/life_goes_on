@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { QuoteDTO as Quote, MoodDTO as Mood } from "life-goes-on-shared";
@@ -25,8 +25,10 @@ const markSplashSeen = (): void => {
 
 interface Props {
   /** Called once the user is ready to leave the splash. `mood` is set only
-   * if they tasted a mood on screen 2 and want to see more like it. */
-  onFinish: (mood?: Mood) => void;
+   * if they tasted a mood on screen 2 and want to see more like it. `moods`
+   * is the list already fetched here, passed along so /quotes doesn't have
+   * to re-fetch the exact same thing seconds later. */
+  onFinish: (mood?: Mood, moods?: Mood[]) => void;
 }
 
 export function Splash({ onFinish }: Props) {
@@ -50,19 +52,25 @@ export function Splash({ onFinish }: Props) {
       });
   }, [screen, language]);
 
+  // Guards against out-of-order responses if the user taps a second mood
+  // pill before the first request resolves.
+  const requestId = useRef(0);
+
   const handlePickMood = async (mood: Mood) => {
+    const id = ++requestId.current;
     setSelectedMood(mood);
     setQuoteLoading(true);
     const result = await api.get<{ quotes: Quote[] }>(
       `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=1&language=${encodeURIComponent(language)}`,
     );
+    if (id !== requestId.current) return;
     if (result.ok && result.data.quotes[0]) setQuote(result.data.quotes[0]);
     setQuoteLoading(false);
   };
 
   const finish = (withMood: boolean): void => {
     markSplashSeen();
-    onFinish(withMood && selectedMood ? selectedMood : undefined);
+    onFinish(withMood && selectedMood ? selectedMood : undefined, moods);
   };
 
   return (
