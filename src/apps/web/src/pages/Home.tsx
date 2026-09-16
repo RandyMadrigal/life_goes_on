@@ -1,10 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { MoodDTO as Mood } from "life-goes-on-shared";
 import samuraiHero from "@/assets/samurai-hero.jpg";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphericBackdrop } from "@/components/AtmosphericBackdrop";
+import { Splash, hasSeenSplash } from "@/components/Splash";
 import { api } from "@/lib/api";
 
 const KANJI_CHARS: Record<string, string> = {
@@ -83,7 +85,6 @@ function SubscribeSection() {
 
   return (
     <section id="subscribe" className="relative py-28 px-4">
-      <AtmosphericBackdrop petals={12} />
       <div className="relative z-10 mx-auto max-w-md text-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -175,6 +176,8 @@ function SubscribeSection() {
 
 export default function Home() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [showSplash, setShowSplash] = useState(() => !hasSeenSplash());
 
   const kanjis = KANJI_KEYS.map((key) => ({
     key,
@@ -185,9 +188,24 @@ export default function Home() {
 
   const carouselQuotes = t("home.carousel.quotes", { returnObjects: true }) as string[];
 
+  if (showSplash) {
+    return (
+      <Splash
+        onFinish={(mood?: Mood, moods?: Mood[]) => {
+          setShowSplash(false);
+          if (mood) navigate("/quotes", { state: { moodName: mood.name, moods } });
+        }}
+      />
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden text-foreground">
       <Navbar />
+      {/* Fixed full-viewport backdrop — one instance covers the whole
+          scrollable page, no need to repeat it per section (each repeat
+          was a duplicate blurred/animated layer, costly to repaint on scroll). */}
+      <AtmosphericBackdrop petals={22} />
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center px-4">
@@ -201,8 +219,6 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-linear-to-b from-background/30 via-background/40 to-background" />
         </div>
-
-        <AtmosphericBackdrop petals={22} />
 
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <motion.p
@@ -269,7 +285,6 @@ export default function Home() {
 
       {/* Philosophy */}
       <section className="relative py-32 px-4">
-        <AtmosphericBackdrop petals={10} />
         <div className="relative z-10 mx-auto max-w-5xl grid md:grid-cols-3 gap-6">
           {kanjis.map((c, i) => (
             <motion.div
@@ -366,8 +381,14 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/5 py-10 text-center text-xs text-muted-foreground">
-        {t("home.footer")}
+      <footer className="relative z-10 border-t border-white/5 py-10 flex flex-col items-center gap-2 text-center text-xs text-muted-foreground">
+        <p>{t("home.footer")}</p>
+        <Link
+          to="/privacy"
+          className="hover:text-foreground transition underline underline-offset-4"
+        >
+          {t("home.footerPrivacyLink")}
+        </Link>
       </footer>
     </div>
   );

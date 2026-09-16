@@ -23,7 +23,7 @@ const envSchema = z.object({
   FRONTEND_URL: z
     .string()
     .url()
-    .default("http://localhost:5173")
+    .default("http://localhost:5175")
     .transform((v) => v.replace(/\/+$/, "")),
   API_BASE_URL: z
     .string()

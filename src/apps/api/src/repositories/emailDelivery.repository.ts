@@ -7,9 +7,9 @@ import type { EmailDeliveryStatus } from "../interfaces/IEmailDelivery";
 import { EmailDeliveryModel } from "../models/emailDelivery.model";
 
 export class EmailDeliveryRepository implements IEmailDeliveryRepository {
-  async existsForDate(subscriberId: Types.ObjectId, date: Date): Promise<boolean> {
-    const found = await EmailDeliveryModel.exists({ subscriberId, date });
-    return found !== null;
+  async findDeliveredSubscriberIds(date: Date): Promise<Set<string>> {
+    const rows = await EmailDeliveryModel.find({ date }).select("subscriberId").lean();
+    return new Set(rows.map((r) => r.subscriberId.toString()));
   }
 
   async record(

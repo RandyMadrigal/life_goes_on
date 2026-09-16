@@ -7,6 +7,19 @@
     "toggleTheme": "Toggle theme",
     "toggleLanguage": "Toggle language"
   },
+  "splash": {
+    "screen1": {
+      "title": "Some days, a single word is enough to keep going.",
+      "body": "Life Goes On is a small space to pause, breathe, and find a phrase to carry with you today.",
+      "cta": "Continue →"
+    },
+    "screen2": {
+      "eyebrow": "命 · A small moment for you",
+      "title": "How are you feeling right now?",
+      "ctaSeeMore": "See more like this →",
+      "ctaContinue": "Continue to Life Goes On →"
+    }
+  },
   "home": {
     "hero": {
       "eyebrow": "命 — Inochi · A quiet companion",
@@ -88,7 +101,8 @@
       "line3Accent": "Even slowly.\"",
       "caption": "命 · Life Goes On"
     },
-    "footer": "Made quietly, for anyone still walking forward. · 命"
+    "footer": "Made quietly, for anyone still walking forward. · 命",
+    "footerPrivacyLink": "Privacy"
   },
   "quotes": {
     "eyebrow": "命 · Words for your moment",
@@ -109,6 +123,34 @@
     "title": "404",
     "subtitle": "This page doesn't exist.",
     "body": "Even the path you meant to take isn't always the one you find. Let's get you back.",
+    "backHome": "← Back home"
+  },
+  "privacy": {
+    "eyebrow": "命 · Your data, plainly explained",
+    "title": "Privacy",
+    "intro": "This page explains, in plain language, what happens to your information when you use Life Goes On. No legal boilerplate — just what we actually do.",
+    "sections": {
+      "collect": {
+        "title": "What we collect",
+        "body": "When you subscribe, we collect your name and email address — nothing else. We don't use tracking scripts, analytics, or advertising cookies of any kind."
+      },
+      "why": {
+        "title": "Why we collect it",
+        "body": "Your name and email are used for exactly one purpose: sending you the daily motivational message you signed up for."
+      },
+      "share": {
+        "title": "Who we share it with",
+        "body": "Two services process your data to make this work: MongoDB Atlas stores it, and Resend delivers the emails. Neither uses your information for anything beyond that."
+      },
+      "retention": {
+        "title": "How long we keep it, and unsubscribing",
+        "body": "We keep your information for as long as you're subscribed. Clicking the unsubscribe link in any email permanently deletes your name and email from our records immediately — not just a flag that stops the emails."
+      },
+      "localStorage": {
+        "title": "Local storage",
+        "body": "This site remembers your language and theme (light/dark) preference using your browser's local storage. That stays on your device, is never sent to us, and isn't used to track you."
+      }
+    },
     "backHome": "← Back home"
   }
 }

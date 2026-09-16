@@ -7,6 +7,19 @@
     "toggleTheme": "Cambiar tema",
     "toggleLanguage": "Cambiar idioma"
   },
+  "splash": {
+    "screen1": {
+      "title": "A veces, una sola palabra basta para seguir adelante.",
+      "body": "Life Goes On es un pequeño espacio para detenerte, respirar y encontrar una frase que te acompañe hoy.",
+      "cta": "Continuar →"
+    },
+    "screen2": {
+      "eyebrow": "命 · Un pequeño momento para ti",
+      "title": "¿Cómo te sentís en este momento?",
+      "ctaSeeMore": "Ver más frases así →",
+      "ctaContinue": "Continuar a Life Goes On →"
+    }
+  },
   "home": {
     "hero": {
       "eyebrow": "命 — Inochi · Un compañero silencioso",
@@ -88,7 +101,8 @@
       "line3Accent": "Aunque sea despacio.\"",
       "caption": "命 · Life Goes On"
     },
-    "footer": "Hecho en silencio, para quien todavía camina hacia adelante. · 命"
+    "footer": "Hecho en silencio, para quien todavía camina hacia adelante. · 命",
+    "footerPrivacyLink": "Privacidad"
   },
   "quotes": {
     "eyebrow": "命 · Palabras para tu momento",
@@ -109,6 +123,34 @@
     "title": "404",
     "subtitle": "Esta página no existe.",
     "body": "Incluso el camino que pensabas tomar no siempre es el que encuentras. Vamos a llevarte de vuelta.",
+    "backHome": "← Volver al inicio"
+  },
+  "privacy": {
+    "eyebrow": "命 · Tus datos, explicados con claridad",
+    "title": "Privacidad",
+    "intro": "Esta página explica, en lenguaje simple, qué pasa con tu información cuando usás Life Goes On. Sin texto legal genérico — solo lo que realmente hacemos.",
+    "sections": {
+      "collect": {
+        "title": "Qué recolectamos",
+        "body": "Cuando te suscribís, recolectamos tu nombre y tu dirección de email — nada más. No usamos scripts de rastreo, analíticas, ni cookies de publicidad de ningún tipo."
+      },
+      "why": {
+        "title": "Para qué lo recolectamos",
+        "body": "Tu nombre y email se usan para un solo propósito: enviarte el mensaje motivacional diario al que te suscribiste."
+      },
+      "share": {
+        "title": "Con quién lo compartimos",
+        "body": "Dos servicios procesan tus datos para que esto funcione: MongoDB Atlas los almacena, y Resend envía los correos. Ninguno de los dos usa tu información para nada más que eso."
+      },
+      "retention": {
+        "title": "Cuánto tiempo lo conservamos, y cómo darte de baja",
+        "body": "Conservamos tu información mientras estés suscrito. Al hacer click en el enlace de darse de baja en cualquier correo, tu nombre y email se borran de forma permanente de nuestros registros de inmediato — no es solo una marca que detiene los correos."
+      },
+      "localStorage": {
+        "title": "Almacenamiento local",
+        "body": "Este sitio recuerda tu idioma y preferencia de tema (claro/oscuro) usando el almacenamiento local de tu navegador. Eso queda en tu dispositivo, nunca se nos envía, y no se usa para rastrearte."
+      }
+    },
     "backHome": "← Volver al inicio"
   }
 }

@@ -2,11 +2,7 @@ import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { randomBytes, randomUUID } from "crypto";
-import { QuoteModel } from "../models/quote.model";
-import { MoodModel } from "../models/mood.model";
 import { env } from "../config/env";
-import { toQuoteDTO, toMoodDTO } from "../utils/dto.mappers";
-import { escapeRegex } from "../utils/regex";
 import { parseDurationMs } from "../utils/duration";
 import { hashPassword, comparePassword } from "../utils/password.utils";
 import { hashToken } from "../utils/hashToken";
@@ -31,19 +27,6 @@ const resetPasswordSchema = z
     password: z.string().min(8, "Token and password (min. 8 characters) are required"),
   })
   .strict();
-const quoteSchema = z
-  .object({
-    text: z.string().trim().min(1).max(1000),
-    moods: z.array(z.string().trim().min(1)).min(1),
-  })
-  .strict();
-const createMoodSchema = z
-  .object({
-    label: z.string().trim().min(1).max(100),
-    name: z.string().trim().min(1).max(100).optional(),
-  })
-  .strict();
-const updateMoodSchema = z.object({ label: z.string().trim().min(1).max(100) }).strict();
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 //
@@ -209,120 +192,4 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
   await refreshTokenRepo.revokeAllForAdmin(admin._id);
 
   res.status(200).json({ success: true, message: "Password updated. You can now log in." });
-};
-
-// ── Quotes CRUD ───────────────────────────────────────────────────────────────
-
-export const getQuotes = async (req: Request, res: Response): Promise<void> => {
-  const page = Math.max(1, Number(req.query.page) || 1);
-  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
-  const mood = req.query.mood as string | undefined;
-  const search = req.query.search as string | undefined;
-
-  const filter: Record<string, unknown> = {};
-  if (mood) filter.moods = mood;
-  if (search) filter.text = { $regex: escapeRegex(search), $options: "i" };
-
-  const [quotes, total] = await Promise.all([
-    QuoteModel.find(filter)
-      .sort({ _id: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
-    QuoteModel.countDocuments(filter),
-  ]);
-
-  res.status(200).json({
-    success: true,
-    data: { quotes: quotes.map(toQuoteDTO), total, page, limit },
-  });
-};
-
-export const createQuote = async (req: Request, res: Response): Promise<void> => {
-  const parsed = quoteSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ success: false, message: "text and moods are required" });
-    return;
-  }
-  const quote = await QuoteModel.create(parsed.data);
-  res.status(201).json({ success: true, data: { quote: toQuoteDTO(quote) } });
-};
-
-export const updateQuote = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const parsed = quoteSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ success: false, message: "text and moods are required" });
-    return;
-  }
-  const quote = await QuoteModel.findByIdAndUpdate(id, parsed.data, {
-    new: true,
-    runValidators: true,
-  }).lean();
-  if (!quote) {
-    res.status(404).json({ success: false, message: "Quote not found" });
-    return;
-  }
-  res.status(200).json({ success: true, data: { quote: toQuoteDTO(quote) } });
-};
-
-export const deleteQuote = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const quote = await QuoteModel.findByIdAndDelete(id).lean();
-  if (!quote) {
-    res.status(404).json({ success: false, message: "Quote not found" });
-    return;
-  }
-  res.status(200).json({ success: true, message: "Quote deleted" });
-};
-
-// ── Moods CRUD ────────────────────────────────────────────────────────────────
-
-const toLabelName = (label: string): string =>
-  label
-    .trim()
-    .split(/\s+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join("");
-
-export const createMood = async (req: Request, res: Response): Promise<void> => {
-  const parsed = createMoodSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ success: false, message: "label is required" });
-    return;
-  }
-  const { label, name: rawName } = parsed.data;
-  const name = rawName || toLabelName(label);
-  const maxOrder = await MoodModel.findOne().sort({ order: -1 }).select("order").lean();
-  const order = (maxOrder?.order ?? -1) + 1;
-  const mood = await MoodModel.create({ name, label, order });
-  res.status(201).json({ success: true, data: { mood: toMoodDTO(mood) } });
-};
-
-export const updateMood = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const parsed = updateMoodSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ success: false, message: "label is required" });
-    return;
-  }
-  const mood = await MoodModel.findByIdAndUpdate(id, parsed.data, {
-    new: true,
-    runValidators: true,
-  }).lean();
-  if (!mood) {
-    res.status(404).json({ success: false, message: "Mood not found" });
-    return;
-  }
-  res.status(200).json({ success: true, data: { mood: toMoodDTO(mood) } });
-};
-
-export const deleteMood = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const mood = await MoodModel.findByIdAndDelete(id).lean();
-  if (!mood) {
-    res.status(404).json({ success: false, message: "Mood not found" });
-    return;
-  }
-  res.status(200).json({ success: true, message: "Mood deleted" });
 };

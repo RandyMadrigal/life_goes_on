@@ -8,7 +8,7 @@ import quoteTextTranslations from "./data/quoteTranslations.json";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-// Mirrors the toLabelName logic in controllers/admin.controller.ts — trim,
+// Mirrors the toLabelName logic in controllers/adminMood.controller.ts — trim,
 // split on whitespace, capitalize each word, join with no spaces.
 const toLabelName = (label: string): string =>
   label

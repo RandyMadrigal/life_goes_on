@@ -89,7 +89,7 @@ export const unsubscribe = asyncHandler(async (req: Request, res: Response): Pro
     return;
   }
 
-  const subscriber = await subscriberRepo.deactivateByToken(token);
+  const subscriber = await subscriberRepo.deleteByToken(token);
   if (!subscriber) {
     res
       .status(404)
@@ -109,7 +109,7 @@ export const unsubscribe = asyncHandler(async (req: Request, res: Response): Pro
     .send(
       htmlPage(
         "Unsubscribed",
-        `<p style="font-size:20px;">You've been unsubscribed, ${escapeHtml(subscriber.name)}.</p><p style="color:#8a8a9a;font-size:14px;">You won't receive any more daily messages from us.</p>`,
+        `<p style="font-size:20px;">You've been unsubscribed, ${escapeHtml(subscriber.name)}.</p><p style="color:#8a8a9a;font-size:14px;">Your data has been deleted from our records. You won't receive any more daily messages from us.</p>`,
       ),
     );
 });
