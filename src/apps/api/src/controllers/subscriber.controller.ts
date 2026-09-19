@@ -1,12 +1,14 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { SubscriberRepository } from "../repositories/subscriber.repository";
+import { EmailDeliveryRepository } from "../repositories/emailDelivery.repository";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
 import { toAdminSubscriberDTO } from "../utils/dto.mappers";
 import { escapeHtml } from "../utils/escapeHtml";
 
 const subscriberRepo = new SubscriberRepository();
+const deliveryRepo = new EmailDeliveryRepository();
 
 const subscribeSchema = z
   .object({
@@ -63,9 +65,42 @@ export const getSubscribers = asyncHandler(async (req: Request, res: Response): 
   );
 });
 
-const htmlPage = (title: string, body: string): string => `
+type Lang = "es" | "en";
+
+const COPY = {
+  en: {
+    invalidTitle: "Invalid link",
+    invalid: "This unsubscribe link is invalid.",
+    notFoundTitle: "Link not found",
+    notFound: "This unsubscribe link is invalid or has already been used.",
+    confirmTitle: "Unsubscribe",
+    confirmQuestion: "Unsubscribe from the daily messages?",
+    confirmNote: "Your data will be permanently deleted from our records.",
+    confirmButton: "Yes, unsubscribe me",
+    doneTitle: "Unsubscribed",
+    done: (name: string) => `You've been unsubscribed, ${name}.`,
+    doneNote:
+      "Your data has been deleted from our records. You won't receive any more daily messages from us.",
+  },
+  es: {
+    invalidTitle: "Enlace inválido",
+    invalid: "Este enlace para darte de baja no es válido.",
+    notFoundTitle: "Enlace no encontrado",
+    notFound: "Este enlace para darte de baja no es válido o ya fue utilizado.",
+    confirmTitle: "Darme de baja",
+    confirmQuestion: "¿Quieres dejar de recibir los mensajes diarios?",
+    confirmNote: "Tus datos se eliminarán permanentemente de nuestros registros.",
+    confirmButton: "Sí, darme de baja",
+    doneTitle: "Baja confirmada",
+    done: (name: string) => `Te has dado de baja, ${name}.`,
+    doneNote:
+      "Tus datos han sido eliminados de nuestros registros. No recibirás más mensajes diarios.",
+  },
+} as const;
+
+const htmlPage = (lang: Lang, title: string, body: string): string => `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -78,38 +113,75 @@ const htmlPage = (title: string, body: string): string => `
 </body>
 </html>`;
 
-export const unsubscribe = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const token = typeof req.query.token === "string" ? req.query.token : "";
+const readToken = (req: Request): string =>
+  typeof req.query.token === "string" ? req.query.token : "";
 
-  if (!token) {
-    res
-      .status(400)
-      .type("html")
-      .send(htmlPage("Invalid link", "<p>This unsubscribe link is invalid.</p>"));
-    return;
-  }
+const invalidLinkPage = (res: Response): void => {
+  const c = COPY.en;
+  res.status(400).type("html").send(htmlPage("en", c.invalidTitle, `<p>${c.invalid}</p>`));
+};
 
-  const subscriber = await subscriberRepo.deleteByToken(token);
-  if (!subscriber) {
+const notFoundPage = (res: Response, lang: Lang): void => {
+  const c = COPY[lang];
+  res.status(404).type("html").send(htmlPage(lang, c.notFoundTitle, `<p>${c.notFound}</p>`));
+};
+
+// GET only renders a confirmation page — it never deletes anything. Mail
+// scanners and link-preview bots follow every link in an email with GET, so
+// a destructive GET would silently delete subscribers who never asked to
+// leave. The actual deletion requires the POST below (the button's form, or
+// a mail provider's one-click List-Unsubscribe-Post request).
+//
+// No CSRF token: the POST is authorized by the unguessable, per-email
+// unsubscribe token in the URL itself, which a third-party site can't know.
+export const unsubscribeConfirm = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const token = readToken(req);
+    if (!token) return invalidLinkPage(res);
+
+    const subscriber = await subscriberRepo.findByToken(token);
+    if (!subscriber) return notFoundPage(res, "en");
+
+    const lang = subscriber.language;
+    const c = COPY[lang];
     res
-      .status(404)
+      .status(200)
       .type("html")
       .send(
         htmlPage(
-          "Link not found",
-          "<p>This unsubscribe link is invalid or has already been used.</p>",
+          lang,
+          c.confirmTitle,
+          `<p style="font-size:20px;">${c.confirmQuestion}</p>
+    <p style="color:#8a8a9a;font-size:14px;">${c.confirmNote}</p>
+    <form method="POST" action="/api/v1/subscribe/unsubscribe?token=${encodeURIComponent(token)}">
+      <button type="submit" style="margin-top:24px;background:#ef4b67;color:#fff;border:0;border-radius:8px;padding:12px 28px;font-size:15px;cursor:pointer;">${c.confirmButton}</button>
+    </form>`,
         ),
       );
-    return;
-  }
+  },
+);
 
+export const unsubscribe = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const token = readToken(req);
+  if (!token) return invalidLinkPage(res);
+
+  const subscriber = await subscriberRepo.deleteByToken(token);
+  if (!subscriber) return notFoundPage(res, "en");
+
+  // The privacy policy promises real deletion — that includes the delivery
+  // history keyed to this subscriber, not just the subscriber record.
+  await deliveryRepo.deleteBySubscriber(subscriber._id);
+
+  const lang = subscriber.language;
+  const c = COPY[lang];
   res
     .status(200)
     .type("html")
     .send(
       htmlPage(
-        "Unsubscribed",
-        `<p style="font-size:20px;">You've been unsubscribed, ${escapeHtml(subscriber.name)}.</p><p style="color:#8a8a9a;font-size:14px;">Your data has been deleted from our records. You won't receive any more daily messages from us.</p>`,
+        lang,
+        c.doneTitle,
+        `<p style="font-size:20px;">${c.done(escapeHtml(subscriber.name))}</p><p style="color:#8a8a9a;font-size:14px;">${c.doneNote}</p>`,
       ),
     );
 });

@@ -13,6 +13,8 @@ export interface IEmailDeliveryRepository {
   findDeliveredSubscriberIds(date: Date): Promise<Set<string>>;
   /** IDs of every quote already successfully emailed to this subscriber, most recent first. */
   findSentQuoteIds(subscriberId: Types.ObjectId): Promise<Types.ObjectId[]>;
+  /** Removes every delivery record for a subscriber — part of a real deletion on unsubscribe. */
+  deleteBySubscriber(subscriberId: Types.ObjectId): Promise<void>;
   record(
     subscriberId: Types.ObjectId,
     quoteId: Types.ObjectId,

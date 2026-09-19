@@ -19,6 +19,10 @@ export class SubscriberRepository implements ISubscriberRepository {
     return SubscriberModel.find({ active: true }).exec();
   }
 
+  async findByToken(token: string): Promise<ISubscriber | null> {
+    return SubscriberModel.findOne({ unsubscribeTokenHash: hashToken(token) }).exec();
+  }
+
   // Unsubscribing deletes the record outright (not a soft-deactivate) —
   // the privacy policy promises real deletion, not indefinite retention
   // under an "inactive" flag.

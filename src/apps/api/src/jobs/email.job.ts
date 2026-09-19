@@ -89,6 +89,11 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
         buildUnsubscribeUrl(unsubscribeToken),
       );
 
+      // The subscriber may have unsubscribed (and had their data deleted)
+      // while this run was in flight — don't write a delivery record for
+      // someone who no longer exists.
+      if (!(await SubscriberModel.exists({ _id: sub._id }))) return;
+
       if (result.success) {
         await deliveryRepo.record(sub._id, quote._id, today, "sent");
         sent += 1;

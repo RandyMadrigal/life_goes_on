@@ -13,6 +13,9 @@ export default function Quotes() {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const language = i18n.language?.startsWith("es") ? "es" : "en";
+  // Router state from the splash (mood list + preselected mood) is only valid
+  // for the language it was fetched in.
+  const stateLanguage = useRef(language).current;
 
   const [moods, setMoods] = useState<Mood[]>([]);
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
@@ -31,7 +34,7 @@ export default function Quotes() {
     setLoading(true);
     setPage(0);
     const result = await api.get<{ quotes: Quote[] }>(
-      `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=6&language=${encodeURIComponent(language)}`,
+      `/api/v1/quotes/random?mood=${encodeURIComponent(mood.name)}&limit=12&language=${encodeURIComponent(language)}`,
     );
     if (id !== requestId.current) return;
     if (result.ok) setQuotes(result.data.quotes);
@@ -46,8 +49,13 @@ export default function Quotes() {
     setPage(0);
     setMoodsLoading(true);
 
-    const preselectName = (location.state as { moodName?: string } | null)?.moodName;
-    const stateMoods = (location.state as { moods?: Mood[] } | null)?.moods;
+    const fromSplash = language === stateLanguage;
+    const preselectName = fromSplash
+      ? (location.state as { moodName?: string } | null)?.moodName
+      : undefined;
+    const stateMoods = fromSplash
+      ? (location.state as { moods?: Mood[] } | null)?.moods
+      : undefined;
 
     const applyMoods = (loadedMoods: Mood[]) => {
       setMoods(loadedMoods);

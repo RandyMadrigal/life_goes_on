@@ -53,7 +53,12 @@ export class EmailService implements IEmailService {
     }
   }
 
-  private async send(to: string, subject: string, html: string): Promise<SendResult> {
+  private async send(
+    to: string,
+    subject: string,
+    html: string,
+    headers?: Record<string, string>,
+  ): Promise<SendResult> {
     if (!this.configured || !this.resend) {
       const error = "Resend not configured (RESEND_API_KEY unset)";
       console.log(`[EmailService] ${error} — skipped. To: ${maskEmail(to)} | Subject: ${subject}`);
@@ -65,6 +70,7 @@ export class EmailService implements IEmailService {
         to,
         subject,
         html,
+        headers,
       });
       if (error) throw new Error(error.message);
       console.log(`[EmailService] Sent → ${maskEmail(to)}`);
@@ -86,6 +92,12 @@ export class EmailService implements IEmailService {
       to,
       "A message for you — Life Goes On 命",
       motivationalTemplate(name, message, unsubscribeUrl),
+      // RFC 8058 one-click unsubscribe — Gmail/Yahoo require it for bulk senders
+      // and show a native "Unsubscribe" button. The provider POSTs to this URL.
+      {
+        "List-Unsubscribe": `<${unsubscribeUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
     );
   }
 

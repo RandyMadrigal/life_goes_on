@@ -20,6 +20,10 @@ export class EmailDeliveryRepository implements IEmailDeliveryRepository {
     return rows.map((r) => r.quoteId);
   }
 
+  async deleteBySubscriber(subscriberId: Types.ObjectId): Promise<void> {
+    await EmailDeliveryModel.deleteMany({ subscriberId }).exec();
+  }
+
   async record(
     subscriberId: Types.ObjectId,
     quoteId: Types.ObjectId,
