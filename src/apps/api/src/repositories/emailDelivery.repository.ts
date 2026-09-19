@@ -14,6 +14,7 @@ export class EmailDeliveryRepository implements IEmailDeliveryRepository {
 
   async findSentQuoteIds(subscriberId: Types.ObjectId): Promise<Types.ObjectId[]> {
     const rows = await EmailDeliveryModel.find({ subscriberId, status: "sent" })
+      .sort({ date: -1 })
       .select("quoteId")
       .lean();
     return rows.map((r) => r.quoteId);

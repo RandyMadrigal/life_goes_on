@@ -65,10 +65,13 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
 
       // Never repeat a quote for the same subscriber. Once they've received
       // every eligible quote, the cycle restarts (fallback below) rather
-      // than the subscriber silently getting nothing.
+      // than the subscriber silently getting nothing. The restart only
+      // excludes the most recent quote (sentQuoteIds is newest-first), so
+      // the same one is never sent two days in a row.
       const sentQuoteIds = await deliveryRepo.findSentQuoteIds(sub._id);
       const quote =
         (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language, sentQuoteIds)) ??
+        (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language, sentQuoteIds.slice(0, 1))) ??
         (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language));
       if (!quote) {
         throw new Error(`No quotes for moods [${DAILY_EMAIL_MOODS.join(", ")}] in "${sub.language}"`);
