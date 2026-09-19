@@ -12,6 +12,13 @@ export class EmailDeliveryRepository implements IEmailDeliveryRepository {
     return new Set(rows.map((r) => r.subscriberId.toString()));
   }
 
+  async findSentQuoteIds(subscriberId: Types.ObjectId): Promise<Types.ObjectId[]> {
+    const rows = await EmailDeliveryModel.find({ subscriberId, status: "sent" })
+      .select("quoteId")
+      .lean();
+    return rows.map((r) => r.quoteId);
+  }
+
   async record(
     subscriberId: Types.ObjectId,
     quoteId: Types.ObjectId,
