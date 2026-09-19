@@ -14,6 +14,19 @@ const emailService = new EmailService();
 const buildUnsubscribeUrl = (token: string): string =>
   `${env.API_BASE_URL}/api/v1/subscribe/unsubscribe?token=${token}`;
 
+// Only quotes tagged with at least one of these moods are ever emailed.
+// Deliberately hardcoded (not admin-configurable). Note both "Disciplined"
+// and "Discipline" exist as separate moods in the data.
+const DAILY_EMAIL_MOODS = [
+  "Motivated",
+  "Disciplined",
+  "Discipline",
+  "Consistency",
+  "HealingSlowly",
+  "FutureSelf",
+  "PersonalGrowth",
+] as const;
+
 export interface SendDailyEmailsResult {
   total: number;
   sent: number;
@@ -50,8 +63,19 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
         return;
       }
 
-      const [quote] = await quoteRepo.findMany(undefined, 1, sub.language);
-      if (!quote) throw new Error("No quotes in database");
+      // Never repeat a quote for the same subscriber. Once they've received
+      // every eligible quote, the cycle restarts (fallback below) rather
+      // than the subscriber silently getting nothing. The restart only
+      // excludes the most recent quote (sentQuoteIds is newest-first), so
+      // the same one is never sent two days in a row.
+      const sentQuoteIds = await deliveryRepo.findSentQuoteIds(sub._id);
+      const quote =
+        (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language, sentQuoteIds)) ??
+        (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language, sentQuoteIds.slice(0, 1))) ??
+        (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language));
+      if (!quote) {
+        throw new Error(`No quotes for moods [${DAILY_EMAIL_MOODS.join(", ")}] in "${sub.language}"`);
+      }
 
       // Fresh token per send: the same subscriber gets a new unsubscribe
       // link in every email, so a leaked/stale token from an old email
@@ -64,6 +88,11 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
         quote.text,
         buildUnsubscribeUrl(unsubscribeToken),
       );
+
+      // The subscriber may have unsubscribed (and had their data deleted)
+      // while this run was in flight — don't write a delivery record for
+      // someone who no longer exists.
+      if (!(await SubscriberModel.exists({ _id: sub._id }))) return;
 
       if (result.success) {
         await deliveryRepo.record(sub._id, quote._id, today, "sent");

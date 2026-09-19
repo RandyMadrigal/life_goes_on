@@ -63,6 +63,7 @@ desktop.ini
 
 # claude
 .claude
+.brag-output
 
 # TODO
 TODO.md
