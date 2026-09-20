@@ -132,7 +132,7 @@
     "sections": {
       "collect": {
         "title": "What we collect",
-        "body": "When you subscribe, we collect your name and email address — nothing else. We don't use tracking scripts, analytics, or advertising cookies of any kind."
+        "body": "When you subscribe, we collect your name and email address — nothing else. Separately, we use Vercel Web Analytics to count page views. It is cookieless, doesn't collect personal data, and doesn't track you across sites. We don't use advertising cookies of any kind."
       },
       "why": {
         "title": "Why we collect it",

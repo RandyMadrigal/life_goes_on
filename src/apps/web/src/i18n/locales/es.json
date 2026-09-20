@@ -132,7 +132,7 @@
     "sections": {
       "collect": {
         "title": "Qué recolectamos",
-        "body": "Cuando te suscribís, recolectamos tu nombre y tu dirección de email — nada más. No usamos scripts de rastreo, analíticas, ni cookies de publicidad de ningún tipo."
+        "body": "Cuando te suscribís, recolectamos tu nombre y tu dirección de email — nada más. Por separado, usamos Vercel Web Analytics para contar las visitas a las páginas. No usa cookies, no recolecta datos personales y no te rastrea entre sitios. No usamos cookies de publicidad de ningún tipo."
       },
       "why": {
         "title": "Para qué lo recolectamos",
