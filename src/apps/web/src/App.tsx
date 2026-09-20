@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Quotes from "./pages/Quotes";
@@ -30,6 +31,14 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        {/* Cookieless page-view analytics (Vercel). The admin panel is excluded
+            so our own visits and reset-password URLs (which carry a token)
+            are never recorded. */}
+        <Analytics
+          beforeSend={(event) =>
+            new URL(event.url).pathname.startsWith("/admin") ? null : event
+          }
+        />
       </BrowserRouter>
     </ThemeProvider>
   );
