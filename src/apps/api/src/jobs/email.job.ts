@@ -15,17 +15,30 @@ const buildUnsubscribeUrl = (token: string): string =>
   `${env.API_BASE_URL}/api/v1/subscribe/unsubscribe?token=${token}`;
 
 // Only quotes tagged with at least one of these moods are ever emailed.
-// Deliberately hardcoded (not admin-configurable). Note both "Disciplined"
-// and "Discipline" exist as separate moods in the data.
-const DAILY_EMAIL_MOODS = [
-  "Motivated",
-  "Disciplined",
-  "Discipline",
-  "Consistency",
-  "HealingSlowly",
-  "FutureSelf",
-  "PersonalGrowth",
-] as const;
+// Deliberately hardcoded (not admin-configurable). Quotes store their moods
+// by name in their own language (the es mood names are translated, not the
+// English slugs), so the list has to exist per language. Note both
+// "Disciplined"/"Discipline" (Disciplinado/Disciplina) are separate moods.
+const DAILY_EMAIL_MOODS: Record<"es" | "en", readonly string[]> = {
+  en: [
+    "Motivated",
+    "Disciplined",
+    "Discipline",
+    "Consistency",
+    "HealingSlowly",
+    "FutureSelf",
+    "PersonalGrowth",
+  ],
+  es: [
+    "Motivado",
+    "Disciplinado",
+    "Disciplina",
+    "Consistencia",
+    "SanandoLentamente",
+    "YoFuturo",
+    "CrecimientoPersonal",
+  ],
+};
 
 export interface SendDailyEmailsResult {
   total: number;
@@ -56,12 +69,17 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
   // subscriber inside the loop below.
   const alreadyDelivered = await deliveryRepo.findDeliveredSubscriberIds(today);
 
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     subscribers.map(async (sub) => {
       if (alreadyDelivered.has(sub._id.toString())) {
         skipped += 1;
         return;
       }
+
+      // Legacy subscribers may lack a language — default to English, since
+      // an undefined value would silently drop the language filter in the query.
+      const lang = sub.language ?? "en";
+      const moods = DAILY_EMAIL_MOODS[lang];
 
       // Never repeat a quote for the same subscriber. Once they've received
       // every eligible quote, the cycle restarts (fallback below) rather
@@ -70,17 +88,23 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
       // the same one is never sent two days in a row.
       const sentQuoteIds = await deliveryRepo.findSentQuoteIds(sub._id);
       const quote =
-        (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language, sentQuoteIds)) ??
-        (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language, sentQuoteIds.slice(0, 1))) ??
-        (await quoteRepo.findRandomByMoods(DAILY_EMAIL_MOODS, sub.language));
+        (await quoteRepo.findRandomByMoods(moods, lang, sentQuoteIds)) ??
+        (await quoteRepo.findRandomByMoods(moods, lang, sentQuoteIds.slice(0, 1))) ??
+        (await quoteRepo.findRandomByMoods(moods, lang));
       if (!quote) {
-        throw new Error(`No quotes for moods [${DAILY_EMAIL_MOODS.join(", ")}] in "${sub.language}"`);
+        throw new Error(`No quotes for moods [${moods.join(", ")}] in "${lang}"`);
       }
 
       // Fresh token per send: the same subscriber gets a new unsubscribe
       // link in every email, so a leaked/stale token from an old email
       // can't be replayed — see the design note in subscriber.repository.ts.
       const unsubscribeToken = await subscriberRepo.rotateUnsubscribeToken(sub._id);
+
+      // Bail before sending if they unsubscribed since the list was loaded.
+      if (!(await SubscriberModel.exists({ _id: sub._id }))) {
+        skipped += 1;
+        return;
+      }
 
       const result = await emailService.sendMotivationalMessage(
         sub.email,
@@ -89,11 +113,6 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
         buildUnsubscribeUrl(unsubscribeToken),
       );
 
-      // The subscriber may have unsubscribed (and had their data deleted)
-      // while this run was in flight — don't write a delivery record for
-      // someone who no longer exists.
-      if (!(await SubscriberModel.exists({ _id: sub._id }))) return;
-
       if (result.success) {
         await deliveryRepo.record(sub._id, quote._id, today, "sent");
         sent += 1;
@@ -101,8 +120,27 @@ export const sendDailyEmails = async (): Promise<SendDailyEmailsResult> => {
         await deliveryRepo.record(sub._id, quote._id, today, "failed", result.error);
         failed += 1;
       }
+
+      // If they unsubscribed while the send was in flight, the record we
+      // just wrote is an orphan — remove it (real deletion, per the privacy
+      // policy). Checking after the write closes the race the other way.
+      if (!(await SubscriberModel.exists({ _id: sub._id }))) {
+        await deliveryRepo.deleteBySubscriber(sub._id);
+      }
     }),
   );
+
+  // allSettled swallows exceptions — surface them so a subscriber that
+  // silently got nothing (e.g. no quotes for their language) is visible.
+  results.forEach((r, i) => {
+    if (r.status === "rejected") {
+      failed += 1;
+      const reason = r.reason instanceof Error ? r.reason.message : String(r.reason);
+      console.error(
+        `❌  Daily email error for subscriber ${subscribers[i]._id} (lang: ${subscribers[i].language ?? "missing"}): ${reason}`,
+      );
+    }
+  });
 
   console.log(
     `📬  Daily email run: ${sent} sent, ${failed} failed, ${skipped} already sent today (of ${subscribers.length} active)`,
