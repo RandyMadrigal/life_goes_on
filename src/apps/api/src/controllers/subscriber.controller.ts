@@ -98,6 +98,10 @@ const COPY = {
   },
 } as const;
 
+// Legacy documents may lack `language` (the schema default only applies to
+// new ones) — fall back to English instead of crashing the unsubscribe page.
+const pageLang = (language: string | undefined): Lang => (language === "es" ? "es" : "en");
+
 const htmlPage = (lang: Lang, title: string, body: string): string => `
 <!DOCTYPE html>
 <html lang="${lang}">
@@ -142,7 +146,7 @@ export const unsubscribeConfirm = asyncHandler(
     const subscriber = await subscriberRepo.findByToken(token);
     if (!subscriber) return notFoundPage(res, "en");
 
-    const lang = subscriber.language;
+    const lang = pageLang(subscriber.language);
     const c = COPY[lang];
     res
       .status(200)
@@ -165,14 +169,17 @@ export const unsubscribe = asyncHandler(async (req: Request, res: Response): Pro
   const token = readToken(req);
   if (!token) return invalidLinkPage(res);
 
-  const subscriber = await subscriberRepo.deleteByToken(token);
+  const subscriber = await subscriberRepo.findByToken(token);
   if (!subscriber) return notFoundPage(res, "en");
 
   // The privacy policy promises real deletion — that includes the delivery
   // history keyed to this subscriber, not just the subscriber record.
+  // History goes first, the subscriber (and with it the token) last: if
+  // anything fails midway the token still works and the user can retry.
   await deliveryRepo.deleteBySubscriber(subscriber._id);
+  await subscriberRepo.deleteByToken(token);
 
-  const lang = subscriber.language;
+  const lang = pageLang(subscriber.language);
   const c = COPY[lang];
   res
     .status(200)
